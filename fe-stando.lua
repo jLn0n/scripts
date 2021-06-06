@@ -34,8 +34,10 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
+local rad, sin, random = math.rad, math.sin, math.random
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
-local HeadOffset = CFrame.new(Vector3.new(0, .1, .25))
+local HeadOffset = CFrame.new(Vector3.new(0, .125, .25))
+local RemoveHeadMesh = false
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -59,7 +61,6 @@ local StandoKeybinds = {
 	[Enum.KeyCode.R] = "HeavyPunch",
 }
 local StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
-local rad, sin, random = math.rad, math.sin, math.random
 local anim, animSpeed = 0, 0
 -- // MAIN
 if not Character:FindFirstChild("StandoCharacter") then
@@ -92,7 +93,11 @@ if not Character:FindFirstChild("StandoCharacter") then
 	for _, object in ipairs(StandoCharacter:GetChildren()) do if object:IsA("BasePart") then object.Transparency = 1 end end
 	for PartName, object in pairs(HatParts) do
 		if object.Handle:FindFirstChildWhichIsA("Weld") then object.Handle:FindFirstChildWhichIsA("Weld"):Destroy() end
-		if PartName ~= "Head" then object.Handle:FindFirstChildWhichIsA("SpecialMesh"):Destroy() end
+		if PartName == "Head" and RemoveHeadMesh then
+			object.Handle:FindFirstChildWhichIsA("SpecialMesh"):Destroy()
+		elseif PartName ~= "Head" then
+			object.Handle:FindFirstChildWhichIsA("SpecialMesh"):Destroy()
+		end
 	end
 
 	local onCharacterRemoved = function()
@@ -276,7 +281,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		anim = (anim % 100) + animSpeed / 10
 		for _, motor in pairs(Motors) do
-			motor.Object.Transform = motor.Object.Transform:lerp(motor.CFrame, .2)
+			motor.Object.Transform = motor.Object.Transform:lerp(motor.CFrame, .25)
 		end
 		if StandoStates.Enabled then
 			if StandoStates.ModeState == "Idle" then
@@ -285,7 +290,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(12), -rad(4))
 				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, -rad(3.5))
 				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
-				Motors.RH.CFrame = Motors.RH.Cache * CFrame.Angles(0, 0, -rad(10))
+				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.1, 0, 0)) * CFrame.Angles(0, 0, -rad(10))
 				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -sin(anim) * .05)) * CFrame.Angles(0, 0, rad(7.5))
 			end
 		else
