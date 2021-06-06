@@ -18,6 +18,7 @@
 	E - Barrage
 	R - HeavyPunch
 	F - Time Stop
+	Z - Stando Jump
 	G - Stand Idle Menance thingy
 --]]
 -- // SERVICES
@@ -34,7 +35,7 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
-local rad, sin, random = math.rad, math.sin, math.random
+local rad, sin, cos, random = math.rad, math.sin, math.cos, math.random
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
 local HeadOffset = CFrame.new(Vector3.new(0, .125, .25))
 local RemoveHeadMesh = false
@@ -48,7 +49,7 @@ local HatParts = {
 	["Torso2"] = Character:FindFirstChild("Kate Hair")
 }
 local StandoStates = {
-	["Enabled"] = true,
+	["Enabled"] = false,
 	["ModeState"] = "Idle",
 	["IsTimeStopMode"] = false,
 	["CanUpdateStates"] = true,
@@ -59,8 +60,9 @@ local StandoKeybinds = {
 	[Enum.KeyCode.F] = "TimeStop",
 	[Enum.KeyCode.G] = "Menancing",
 	[Enum.KeyCode.R] = "HeavyPunch",
+	[Enum.KeyCode.Z] = "StandoJump"
 }
-local StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+local StandoCFrame = CFrame.new()
 local anim, animSpeed = 0, 0
 -- // MAIN
 if not Character:FindFirstChild("StandoCharacter") then
@@ -119,7 +121,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache
 		wait()
-		createMessage("ORA! (x12)")
+		createMessage("MUDA! (x7)")
 		for _ = 1, 14 do
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(40))
 			wait(.075)
@@ -140,7 +142,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.5))
 		Humanoid.WalkSpeed = 2.75
-		createMessage("OORAAA!!")
+		createMessage("MUDAAAAA!!")
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(0, 0, -rad(20))
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(25), 0, rad(15))
@@ -180,6 +182,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 			wait(.025)
 		end
 		wait(.15)
+		Humanoid.WalkSpeed = 30
 		StandoStates.IsTimeStopMode = true
 		settings():GetService("NetworkSettings").IncomingReplicationLag = math.huge
 		HRP.Anchored = false
@@ -192,10 +195,32 @@ if not Character:FindFirstChild("StandoCharacter") then
 			ColorCE.Contrast -= .1
 			wait(.025)
 		end
+		Humanoid.WalkSpeed = 16
 		ColorCE.Enabled = false
 		StandoStates.CanUpdateStates = true
 		StandoStates.IsTimeStopMode = false
 		settings():GetService("NetworkSettings").IncomingReplicationLag = 0
+	end
+
+	local StandoJump = function()
+		StandoStates.ModeState = "HeavyPunch"
+		setUpdateState(false)
+		StandoCFrame = CFrame.new(Vector3.new(0, 2, 3.25))
+		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(25), 0, 0)
+		Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(0, 0, -rad(15))
+		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(0, 0, rad(15))
+		Motors.RH.CFrame = Motors.RH.Cache * CFrame.Angles(0, 0, -rad(10))
+		Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, rad(10))
+		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(25), 0, 0)
+		HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 125)
+		for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
+		wait(.05)
+		Humanoid.FreeFalling:Wait()
+		StandoStates.ModeState = "Idle"
+		setUpdateState(true)
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+		wait(.25)
+		HRP.Velocity = Vector3.new()
 	end
 
 	local MenanceAnim = function()
@@ -214,8 +239,9 @@ if not Character:FindFirstChild("StandoCharacter") then
 			if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.ModeState == "Idle" then
 				StandoStates.Enabled = not StandoStates.Enabled
 				if StandoStates.Enabled then
+					createMessage("FE STANDO ENABLED!")
 					StandoStates.ModeState = "Idle"
-					StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+					StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 				end
 			end
 			if StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
@@ -224,6 +250,8 @@ if not Character:FindFirstChild("StandoCharacter") then
 						Barrage()
 					elseif StandoKeybinds[input.KeyCode] == "HeavyPunch" then
 						HeavyPunch()
+					elseif StandoKeybinds[input.KeyCode] == "StandoJump" then
+						StandoJump()
 					elseif StandoKeybinds[input.KeyCode] == "Menancing" then
 						MenanceAnim()
 					elseif StandoKeybinds[input.KeyCode] == "TimeStop" and not StandoStates.IsTimeStopMode then
@@ -287,11 +315,11 @@ if not Character:FindFirstChild("StandoCharacter") then
 			if StandoStates.ModeState == "Idle" then
 				animSpeed = .5
 				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
-				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(12), -rad(4))
-				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, -rad(3.5))
-				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
-				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.1, 0, 0)) * CFrame.Angles(0, 0, -rad(10))
-				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -sin(anim) * .05)) * CFrame.Angles(0, 0, rad(7.5))
+				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
+				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, cos(anim) * .035, -rad(3.5))
+				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .03, cos(anim) * .045)
+				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.25 + cos(anim) * .05, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .05)
+				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .05)) * CFrame.Angles(0, 0, rad(7.5))
 			end
 		else
 			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + random(1, 100), 1000))
