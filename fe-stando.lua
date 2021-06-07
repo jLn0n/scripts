@@ -1,6 +1,6 @@
 --[[
 	Info:
-	Hey im jLn0n u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
+	Hey im jLn0n, u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
 	leaked fe stand script, I made this script on 6/2/2021 from scratch because the leaked FE stand script has been patched
 	by roblox. Read things that I've written below to guide you using the script.
 
@@ -22,6 +22,7 @@
 	G - Stand Idle Menance thingy
 --]]
 -- // SERVICES
+local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local RepStorage = game:GetService("ReplicatedStorage")
@@ -63,8 +64,10 @@ local StandoKeybinds = {
 	[Enum.KeyCode.Z] = "StandoJump"
 }
 local StandoCFrame = CFrame.new()
+local escKeyPressed = false
 local anim, animSpeed = 0, 0
 -- // MAIN
+wait(.25)
 if not Character:FindFirstChild("StandoCharacter") then
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
@@ -108,7 +111,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "Barrage"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -1.75))
-		Humanoid.WalkSpeed = 3.25
+		Humanoid.WalkSpeed = 3.45
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
@@ -126,7 +129,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		end
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 		Humanoid.WalkSpeed = 16
 	end
 
@@ -134,7 +137,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "HeavyPunch"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.5))
-		Humanoid.WalkSpeed = 2.75
+		Humanoid.WalkSpeed = 3.725
 		createMessage("MUDAAAAA!!")
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(0, 0, -rad(20))
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
@@ -148,7 +151,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.5)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 		Humanoid.WalkSpeed = 16
 	end
 
@@ -175,12 +178,12 @@ if not Character:FindFirstChild("StandoCharacter") then
 			wait(.025)
 		end
 		wait(.15)
-		Humanoid.WalkSpeed = 30
+		Humanoid.WalkSpeed = 25
 		StandoStates.IsTimeStopMode = true
 		settings():GetService("NetworkSettings").IncomingReplicationLag = math.huge
 		HRP.Anchored = false
 		Humanoid:ChangeState("Freefall")
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 		StandoStates.ModeState = "Idle"
 		wait(8)
 		for _ = 1, 10 do
@@ -210,7 +213,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.1)
 		Humanoid.FreeFalling:Wait()
 		StandoStates.ModeState = "Idle"
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 		wait(.25)
 		setUpdateState(true)
 		HRP.Velocity = Vector3.new()
@@ -231,12 +234,11 @@ if not Character:FindFirstChild("StandoCharacter") then
 			if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.ModeState == "Idle" then
 				StandoStates.Enabled = not StandoStates.Enabled
 				if StandoStates.Enabled then
-					createMessage("FE STANDO ENABLED!")
+					createMessage("FE SUTANDO!")
 					StandoStates.ModeState = "Idle"
 					StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 				end
-			end
-			if StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
+			elseif StandoStates.Enabled and not escKeyPressed and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
 				if StandoStates.ModeState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.ModeState ~= StandoKeybinds[input.KeyCode] then
 					if StandoKeybinds[input.KeyCode] == "Barrage" then
 						Barrage()
@@ -254,13 +256,16 @@ if not Character:FindFirstChild("StandoCharacter") then
 					Humanoid.WalkSpeed = 16
 					HRP.Anchored = false
 					animSpeed = 1
-					StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
+					StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 				end
 			end
 		end
 	end)
 
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
+		escKeyPressed = GuiService.MenuIsOpen
+		anim = (anim % 100) + animSpeed / 10
+
 		settings().Physics.AllowSleep = false
 		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
 		settings().Physics.ThrottleAdjustTime = -math.huge
@@ -279,33 +284,11 @@ if not Character:FindFirstChild("StandoCharacter") then
 				object.CanCollide = false
 			end
 		end
-	end)
 
-	_G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
-		StandoHRP.CFrame = HRP.CFrame * StandoCFrame
-		for PartName, object in pairs(HatParts) do
-			if object:FindFirstChild("Handle") then
-				if PartName == "Torso1" then
-					object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
-				elseif PartName == "Torso2" then
-					object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(-.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
-				elseif PartName == "Head" then
-					object.Handle.CFrame = StandoCharacter.Head.CFrame * HeadOffset
-				else
-					object.Handle.CFrame = StandoCharacter[PartName].CFrame * CFrame.Angles(rad(90), 0, 0)
-				end
-			end
-		end
-	end)
-
-	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
-		anim = (anim % 100) + animSpeed / 10
-		for _, motor in pairs(Motors) do
-			motor.Object.Transform = motor.Object.Transform:lerp(motor.CFrame, .25)
-		end
+		for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:lerp(motor.CFrame, .25) end
 		if StandoStates.Enabled then
 			if StandoStates.ModeState == "Idle" then
-				animSpeed = .5
+				animSpeed = .375
 				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
 				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
 				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, cos(anim) * .035, -rad(3.5))
@@ -324,6 +307,23 @@ if not Character:FindFirstChild("StandoCharacter") then
 		else
 			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + random(1, 100), 1000))
 			for _, motor in pairs(Motors) do motor.CFrame = motor.Cache end
+		end
+	end)
+
+	_G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
+		StandoHRP.CFrame = HRP.CFrame * StandoCFrame
+		for PartName, object in pairs(HatParts) do
+			if object:FindFirstChild("Handle") then
+				if PartName == "Torso1" then
+					object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
+				elseif PartName == "Torso2" then
+					object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(-.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
+				elseif PartName == "Head" then
+					object.Handle.CFrame = StandoCharacter.Head.CFrame * HeadOffset
+				else
+					object.Handle.CFrame = StandoCharacter[PartName].CFrame * CFrame.Angles(rad(90), 0, 0)
+				end
+			end
 		end
 	end)
 
