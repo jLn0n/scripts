@@ -1,8 +1,8 @@
 --[[
 	Info:
-	Hey im jLn0n, not the original creator of the all known leaked fe script, I made this script on 6/2/2021 because
-	the leaked FE stand script is patched by roblox and decided to write it from scratch, it has simple functions and
-	still improving it. Read things that I've writted below to guide you using the script.
+	Hey im jLn0n u might know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all
+	known leaked fe script, I made this script on 6/2/2021 from scratch because the leaked FE stand script has been
+	patched by roblox. Read things that I've written below to guide you using the script.
 
 	Hats Needed:
 	https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable)
@@ -13,7 +13,7 @@
 	https://www.roblox.com/catalog/62234425
 	https://www.roblox.com/catalog/62724852 (bundle: https://www.roblox.com/bundles/239)
 
-	Controls:
+	Keybinds:
 	Q - Summon / Unsummon stand
 	E - Barrage
 	R - HeavyPunch
@@ -58,7 +58,7 @@ local StandoStates = {
 local StandoKeybinds = {
 	[Enum.KeyCode.E] = "Barrage",
 	[Enum.KeyCode.F] = "TimeStop",
-	[Enum.KeyCode.G] = "Menancing",
+	[Enum.KeyCode.G] = "MenanceIdle",
 	[Enum.KeyCode.R] = "HeavyPunch",
 	[Enum.KeyCode.Z] = "StandoJump"
 }
@@ -67,12 +67,10 @@ local anim, animSpeed = 0, 0
 -- // MAIN
 if not Character:FindFirstChild("StandoCharacter") then
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
-
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
 	local StandoHRP = StandoCharacter.HumanoidRootPart
 	local ColorCE = Lighting:FindFirstChild("TimeStopCCE") or Instance.new("ColorCorrectionEffect")
-	StandoCharacter.Name = "StandoCharacter"
-	StandoCharacter.Parent = Character
+	StandoCharacter.Name, StandoCharacter.Parent = "StandoCharacter", Character
 	ColorCE.Name, ColorCE.Parent = "TimeStopCCE", Lighting
 
 	local initMotor = function(motor)
@@ -84,12 +82,12 @@ if not Character:FindFirstChild("StandoCharacter") then
 	end
 
 	local Motors = {
-		Neck = initMotor(StandoCharacter.Torso.Neck),
-		RS = initMotor(StandoCharacter.Torso["Right Shoulder"]),
-		LS = initMotor(StandoCharacter.Torso["Left Shoulder"]),
-		RH = initMotor(StandoCharacter.Torso["Right Hip"]),
-		LH = initMotor(StandoCharacter.Torso["Left Hip"]),
-		RJoint = initMotor(StandoHRP.RootJoint),
+		["Neck"] = initMotor(StandoCharacter.Torso.Neck),
+		["RS"] = initMotor(StandoCharacter.Torso["Right Shoulder"]),
+		["LS"] = initMotor(StandoCharacter.Torso["Left Shoulder"]),
+		["RH"] = initMotor(StandoCharacter.Torso["Right Hip"]),
+		["LH"] = initMotor(StandoCharacter.Torso["Left Hip"]),
+		["RJoint"] = initMotor(StandoHRP.RootJoint),
 	}
 
 	for _, object in ipairs(StandoCharacter:GetChildren()) do if object:IsA("BasePart") then object.Transparency = 1 end end
@@ -102,12 +100,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		end
 	end
 
-	local onCharacterRemoved = function()
-		for _, connection in ipairs(_G.Connections) do
-			connection:Disconnect()
-		end _G.Connections = {}
-	end
-
+	local onCharacterRemoved = function() for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {} end
 	local createMessage = function(msg) ChatMakeMsg:FireServer(msg, "All") end
 	local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
 
@@ -207,29 +200,28 @@ if not Character:FindFirstChild("StandoCharacter") then
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, 2, 3.25))
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(25), 0, 0)
-		Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(0, 0, -rad(15))
-		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(0, 0, rad(15))
-		Motors.RH.CFrame = Motors.RH.Cache * CFrame.Angles(0, 0, -rad(10))
-		Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, rad(10))
+		Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(5), 0, -rad(15))
+		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(5), 0, rad(15))
+		Motors.RH.CFrame = Motors.RH.Cache * CFrame.Angles(0, rad(2.5), -rad(7.5))
+		Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, rad(2.5), rad(7.5))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(25), 0, 0)
 		HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 125)
 		for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
-		wait(.05)
+		wait(.1)
 		Humanoid.FreeFalling:Wait()
 		StandoStates.ModeState = "Idle"
-		setUpdateState(true)
 		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.5, 2.5))
 		wait(.25)
+		setUpdateState(true)
 		HRP.Velocity = Vector3.new()
 	end
 
-	local MenanceAnim = function()
+	local MenanceIdleAnim = function()
 		for _, animObj in pairs(Humanoid:GetPlayingAnimationTracks()) do animObj:Stop() end
-		StandoStates.ModeState = "Menancing"
+		StandoStates.ModeState = "MenanceIdle"
 		setUpdateState(false)
 		HRP.Anchored = true
 		StandoCFrame = CFrame.new(Vector3.new(0, 0, 1.25)) * CFrame.Angles(0, rad(180), 0)
-		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15), 0, rad(22.5))
 		wait(.5)
 		setUpdateState(true)
 	end
@@ -252,8 +244,8 @@ if not Character:FindFirstChild("StandoCharacter") then
 						HeavyPunch()
 					elseif StandoKeybinds[input.KeyCode] == "StandoJump" then
 						StandoJump()
-					elseif StandoKeybinds[input.KeyCode] == "Menancing" then
-						MenanceAnim()
+					elseif StandoKeybinds[input.KeyCode] == "MenanceIdle" then
+						MenanceIdleAnim()
 					elseif StandoKeybinds[input.KeyCode] == "TimeStop" and not StandoStates.IsTimeStopMode then
 						TimeStop()
 					end
@@ -270,7 +262,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		settings().Physics.AllowSleep = false
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
 		settings().Physics.ThrottleAdjustTime = -math.huge
 
 		for _, object in ipairs(Character:GetChildren()) do
@@ -320,6 +312,14 @@ if not Character:FindFirstChild("StandoCharacter") then
 				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .03, cos(anim) * .045)
 				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.25 + cos(anim) * .05, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .05)
 				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .05)) * CFrame.Angles(0, 0, rad(7.5))
+			elseif StandoStates.ModeState == "MenanceIdle" then
+				animSpeed = .5
+				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15), 0, rad(22.5))
+				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
+				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, cos(anim) * .035, -rad(3.5))
+				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .03, cos(anim) * .045)
+				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.25 + cos(anim) * .05, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .05)
+				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, cos(anim) * .075))
 			end
 		else
 			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + random(1, 100), 1000))
