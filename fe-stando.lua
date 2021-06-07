@@ -1,8 +1,8 @@
 --[[
 	Info:
-	Hey im jLn0n u might know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all
-	known leaked fe script, I made this script on 6/2/2021 from scratch because the leaked FE stand script has been
-	patched by roblox. Read things that I've written below to guide you using the script.
+	Hey im jLn0n u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
+	leaked fe stand script, I made this script on 6/2/2021 from scratch because the leaked FE stand script has been patched
+	by roblox. Read things that I've written below to guide you using the script.
 
 	Hats Needed:
 	https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable)
