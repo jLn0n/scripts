@@ -58,9 +58,9 @@ local StandoStates = {
 }
 local StandoKeybinds = {
 	[Enum.KeyCode.E] = "Barrage",
+	[Enum.KeyCode.R] = "HeavyPunch",
 	[Enum.KeyCode.F] = "TimeStop",
 	[Enum.KeyCode.G] = "MenanceIdle",
-	[Enum.KeyCode.R] = "HeavyPunch",
 	[Enum.KeyCode.Z] = "StandoJump"
 }
 local StandoCFrame = CFrame.new()
@@ -117,9 +117,9 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait()
 		createMessage("MUDA! (x7)")
 		for _ = 1, 14 do
-			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(40))
+			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
 			wait(.075)
-			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(3.5, .5, 0)) * CFrame.Angles(rad(90), 0, rad(40))
+			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(3.5, .5, 0)) * CFrame.Angles(rad(90), 0, rad(32.5))
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
 			wait(.075)
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
@@ -144,7 +144,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.4)
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(12), 0, rad(10))
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
-		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(115))
+		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(125))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(0, 0, rad(25))
 		wait(.5)
 		StandoStates.ModeState = "Idle"
@@ -287,7 +287,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		if StandoStates.Enabled then
 			if StandoStates.ModeState == "Idle" then
 				animSpeed = .375
-				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
+				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5) + cos(anim) * .0375, 0, 0)
 				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
 				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, cos(anim) * .035, -rad(3.5))
 				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .03, cos(anim) * .045)
@@ -295,12 +295,12 @@ if not Character:FindFirstChild("StandoCharacter") then
 				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .05)) * CFrame.Angles(0, 0, rad(7.5))
 			elseif StandoStates.ModeState == "MenanceIdle" then
 				animSpeed = .35
-				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15), 0, rad(22.5))
+				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15) + cos(anim) * .0325, 0, rad(22.5))
 				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
 				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, cos(anim) * .035, -rad(3.5))
 				Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .03, cos(anim) * .045)
 				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.25 + cos(anim) * .05, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .05)
-				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, cos(anim) * .075))
+				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(cos(anim) * .0325, 0, 0))
 			end
 		else
 			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + random(1, 100), 1000))
