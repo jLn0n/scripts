@@ -64,10 +64,8 @@ local StandoKeybinds = {
 	[Enum.KeyCode.Z] = "StandoJump"
 }
 local StandoCFrame = CFrame.new()
-local escKeyPressed = false
 local anim, animSpeed = 0, 0
 -- // MAIN
-wait(.25)
 if not Character:FindFirstChild("StandoCharacter") then
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
@@ -230,7 +228,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 	end
 
 	_G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Keyboard and not UIS:GetFocusedTextBox() then
+		if input.UserInputType == Enum.UserInputType.Keyboard and not UIS:GetFocusedTextBox() and not GuiService.MenuIsOpen then
 			if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.ModeState == "Idle" then
 				StandoStates.Enabled = not StandoStates.Enabled
 				if StandoStates.Enabled then
@@ -238,7 +236,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 					StandoStates.ModeState = "Idle"
 					StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
 				end
-			elseif StandoStates.Enabled and not escKeyPressed and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
+			elseif StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
 				if StandoStates.ModeState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.ModeState ~= StandoKeybinds[input.KeyCode] then
 					if StandoKeybinds[input.KeyCode] == "Barrage" then
 						Barrage()
@@ -263,7 +261,6 @@ if not Character:FindFirstChild("StandoCharacter") then
 	end)
 
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
-		escKeyPressed = GuiService.MenuIsOpen
 		anim = (anim % 100) + animSpeed / 10
 
 		settings().Physics.AllowSleep = false
@@ -272,6 +269,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 
 		for _, object in ipairs(Character:GetChildren()) do
 			if object:IsA("Accessory") and object:FindFirstChild("Handle") then
+				object.Handle.CastShadow = true
 				object.Handle.CanCollide = false
 				object.Handle.Massless = true
 				object.Handle.Velocity = Vector3.new(0, 40, 0)
@@ -296,7 +294,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 				Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.25 + cos(anim) * .05, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .05)
 				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .05)) * CFrame.Angles(0, 0, rad(7.5))
 			elseif StandoStates.ModeState == "MenanceIdle" then
-				animSpeed = .5
+				animSpeed = .35
 				Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15), 0, rad(22.5))
 				Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
 				Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, cos(anim) * .035, -rad(3.5))
