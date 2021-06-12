@@ -22,6 +22,11 @@
 	Z - Stando Jump
 	G - Stand Idle Menance thingy
 --]]
+-- // SETTINGS
+local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
+local HeadOffset = CFrame.new(Vector3.new(0, .125, .25)) -- offsets the desired head
+local RemoveHeadMesh = false -- removes the mesh of the desired head
+local EnableChats = false -- enables character chatting when a action was enabled / changed
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
@@ -38,9 +43,6 @@ local ChatMakeMsg = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
 local rad, sin, cos, random = math.rad, math.sin, math.cos, math.random
-local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
-local HeadOffset = CFrame.new(Vector3.new(0, .125, .25))
-local RemoveHeadMesh = false
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -103,8 +105,8 @@ if not Character:FindFirstChild("StandoCharacter") then
 	end
 
 	local onCharacterRemoved = function() for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {} end
-	local createMessage = function(msg) ChatMakeMsg:FireServer(msg, "All") end
 	local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
+	local createMessage = function(msg) ChatMakeMsg:FireServer(((EnableChats and msg) and msg), "All") end
 
 	local Barrage = function()
 		StandoStates.ModeState = "Barrage"
@@ -114,14 +116,14 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
-		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, 0)
+		Motors.RJoint.CFrame = Motors.RJoint.Cache
 		wait()
 		createMessage("MUDA! (x7)")
 		for _ = 1, 14 do
-			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.new(Vector3.new(.105, 0, 0)) * CFrame.Angles(rad(7.5), 0, 0)
+			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
 			wait(.075)
-			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.new(Vector3.new(-.105, 0, 0)) * CFrame.Angles(rad(7.5), 0, 0)
+			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(-.1)) * CFrame.Angles(rad(7.25), 0, 0)
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(3.5, .5, 0)) * CFrame.Angles(rad(90), 0, rad(32.5))
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
 			wait(.075)
@@ -281,7 +283,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		end
 
 		for _, object in ipairs(StandoCharacter:GetDescendants()) do if object:IsA("BasePart") then object.CanCollide = false end end
-		for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:lerp(motor.CFrame, .25) end
+		for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:Lerp(motor.CFrame, .25) end
 		if StandoStates.Enabled then
 			if StandoStates.ModeState == "Idle" then
 				animSpeed = .375
