@@ -133,7 +133,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
 		Humanoid.WalkSpeed = 16
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 	end
 
 	local HeavyPunch = function()
@@ -154,7 +154,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.5)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 		Humanoid.WalkSpeed = 16
 	end
 
@@ -186,7 +186,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		settings():GetService("NetworkSettings").IncomingReplicationLag = math.huge
 		HRP.Anchored = false
 		Humanoid:ChangeState("Freefall")
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 		StandoStates.ModeState = "Idle"
 		wait(8)
 		for _ = 1, 10 do
@@ -216,7 +216,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.1)
 		Humanoid.FreeFalling:Wait()
 		StandoStates.ModeState = "Idle"
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
+		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 		wait(.25)
 		setUpdateState(true)
 		HRP.Velocity = Vector3.new()
@@ -241,7 +241,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 					StandoStates.ModeState = "Idle"
 					Humanoid.WalkSpeed = 16
 					HRP.Anchored = false
-					StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
+					StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 				end
 			elseif StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
 				if StandoStates.ModeState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.ModeState ~= StandoKeybinds[input.KeyCode] then
@@ -260,7 +260,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 					StandoStates.ModeState = "Idle"
 					Humanoid.WalkSpeed = 16
 					HRP.Anchored = false
-					StandoCFrame = CFrame.new(Vector3.new(-1.25, .75, 2.5))
+					StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 				end
 			end
 		end
