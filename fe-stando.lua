@@ -270,7 +270,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		anim = (anim % 100) + animSpeed / 10
 
 		settings().Physics.AllowSleep = false
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
+		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 		settings().Physics.ThrottleAdjustTime = -math.huge
 
 		for _, object in ipairs(Character:GetChildren()) do
