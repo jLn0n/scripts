@@ -270,8 +270,9 @@ if not Character:FindFirstChild("StandoCharacter") then
 		anim = (anim % 100) + animSpeed / 10
 
 		settings().Physics.AllowSleep = false
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 		settings().Physics.ThrottleAdjustTime = -math.huge
+		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+		Player.ReplicationFocus = Character
 
 		for _, object in ipairs(Character:GetChildren()) do
 			if object:IsA("Accessory") and object:FindFirstChild("Handle") then
