@@ -78,6 +78,7 @@ function M.new(properties)
 		setProperty(synHL_UI, propName, propValue)
 	end
 
+	function sub_M:getChildren() return synHL_UI:GetChildren() end
 	function sub_M:setProperty(propName, propValue) setProperty(synHL_UI, propName, propValue) end
 	function sub_M:Destroy()
 		for _, connection in ipairs(sub_M._connections) do
