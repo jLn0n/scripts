@@ -51,31 +51,34 @@ local updateTextSource = function(synHL_UI, textSource)
 	TextSource.CanvasSize = UDim2.new(0, TextSourceSize.X + (TextSource.ScrollBarThickness + 2), 0, TextSourceSize.Y + TextSource.ScrollBarThickness)
 end
 
-local initSynHighlight = function(synHL_UI, connectionStorage)
-	local TextLines = synHL_UI.TextLines
-	local TextSource = synHL_UI.TextSource
-
-	connectionStorage[#connectionStorage + 1] = TextSource:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
-		TextLines.CanvasPosition = Vector2.new(0, TextSource.CanvasPosition.Y)
+local setProperty = function(object, propName, propValue)
+	local succ, err = pcall(function()
+		object[propName] = propValue
 	end)
+
+	if not succ and propName == "TextSource" then
+		updateTextSource(object, propValue)
+	elseif not succ then
+		return error(err)
+	end
 end
 
 local M = {} -- why use metatables lol
 
-function M.new(guiParent, properties)
-	assert(typeof(guiParent) == "Instance", "the argument #1 should be a instance")
+function M.new(properties)
 	assert(type(properties) == "table", "the argument #2 should be a table")
 	local synHL_UI = synHLUI_Template:Clone()
+	local TextLines = synHL_UI.TextLines
+	local TextSource = synHL_UI.TextSource
 	local sub_M = {
 		_connections = {},
 	}
-	synHL_UI.Parent, synHL_UI.Position, synHL_UI.Size = guiParent, properties.Position or UDim2.new(), properties.Size or UDim2.new(0, 350, 0, 500)
-	updateTextSource(synHL_UI, properties.TextSource or "")
 
-	function sub_M:updateSource(textSource)
-		updateTextSource(synHL_UI, textSource)
+	for propName, propValue in pairs(properties) do
+		setProperty(synHL_UI, propName, propValue)
 	end
 
+	function sub_M:setProperty(propName, propValue) setProperty(synHL_UI, propName, propValue) end
 	function sub_M:Destroy()
 		for _, connection in ipairs(sub_M._connections) do
 			connection:Disconnect()
@@ -83,7 +86,9 @@ function M.new(guiParent, properties)
 		synHL_UI:Destroy()
 	end
 
-	initSynHighlight(synHL_UI, sub_M._connections)
+	sub_M._connections[#sub_M._connections + 1] = TextSource:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+		TextLines.CanvasPosition = Vector2.new(0, TextSource.CanvasPosition.Y)
+	end)
 	return sub_M
 end
 
