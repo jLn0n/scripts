@@ -58,6 +58,13 @@ local setProperty = function(object, propName, propValue)
 
 	if not succ and propName == "TextSource" then
 		updateTextSource(object, propValue)
+	elseif not succ and propName == "SyntaxColors" and type(propValue) == "table" then
+		local SynHL_Labels = object.TextSource.Holder:GetChildren()
+		for _, labelObj in ipairs(SynHL_Labels) do
+			if propValue[labelObj.Name] then
+				labelObj.TextColor3 = propValue[labelObj.Name]
+			end
+		end
 	elseif not succ then
 		return error(err)
 	end
@@ -74,10 +81,6 @@ function M.new(properties)
 		_connections = {},
 	}
 
-	for propName, propValue in pairs(properties) do
-		setProperty(synHL_UI, propName, propValue)
-	end
-
 	function sub_M:getChildren()
 		return {
 			[TextSource.Name] = TextSource,
@@ -90,6 +93,12 @@ function M.new(properties)
 			connection:Disconnect()
 		end
 		synHL_UI:Destroy()
+		table.clear(sub_M); sub_M = nil
+	end
+
+	-- // INIT
+	for propName, propValue in pairs(properties) do
+		setProperty(synHL_UI, propName, propValue)
 	end
 
 	sub_M._connections[#sub_M._connections + 1] = TextSource:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
