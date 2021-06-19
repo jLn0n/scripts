@@ -66,7 +66,7 @@ end
 local M = {} -- why use metatables lol
 
 function M.new(properties)
-	assert(type(properties) == "table", "the argument #2 should be a table")
+	assert(type(properties) == "table", "the argument #1 should be a table")
 	local synHL_UI = synHLUI_Template:Clone()
 	local TextLines = synHL_UI.TextLines
 	local TextSource = synHL_UI.TextSource
