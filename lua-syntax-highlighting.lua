@@ -48,7 +48,7 @@ local updateTextSource = function(synHL_UI, textSource)
 	TextLines.CanvasSize = UDim2.new(0, 0, 0, TextLineSize.Y + TextLines.ScrollBarThickness)
 	TextSource.Position = UDim2.new(0, TextLines.Size.X.Offset, 0, 0)
 	TextSource.Size = UDim2.new(0, synHL_UI.AbsoluteSize.X - TextLines.Size.X.Offset, 0, synHL_UI.AbsoluteSize.Y)
-	TextSource.CanvasSize = UDim2.new(0, TextSourceSize.X + (TextSource.ScrollBarThickness + 2), 0, TextSourceSize.Y + TextSource.ScrollBarThickness + TextLines.Size.X.Offset)
+	TextSource.CanvasSize = UDim2.new(0, TextSourceSize.X + (TextSource.ScrollBarThickness + TextLines.Size.X.Offset + 2), 0, TextSourceSize.Y + TextSource.ScrollBarThickness + (synHL_UI.AbsoluteSize.Y - TextSource.Holder.TextSize))
 end
 
 local setProperty = function(object, propName, propValue)
