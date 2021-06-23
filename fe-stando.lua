@@ -27,6 +27,7 @@ local HeadName = "MediHood" -- you can find the name of ur desired head by using
 local HeadOffset = CFrame.new(Vector3.new(0, .125, .25)) -- offsets the desired head
 local RemoveHeadMesh = false -- removes the mesh of the desired head
 local EnableChats = false -- enables character chatting when a action was enabled / changed
+local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
@@ -133,7 +134,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
 		Humanoid.WalkSpeed = 16
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+		StandoCFrame = StarterStandoCFramePos
 	end
 
 	local HeavyPunch = function()
@@ -154,7 +155,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.5)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+		StandoCFrame = StarterStandoCFramePos
 		Humanoid.WalkSpeed = 16
 	end
 
@@ -186,7 +187,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		settings():GetService("NetworkSettings").IncomingReplicationLag = math.huge
 		HRP.Anchored = false
 		Humanoid:ChangeState("Freefall")
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+		StandoCFrame = StarterStandoCFramePos
 		StandoStates.ModeState = "Idle"
 		wait(8)
 		for _ = 1, 10 do
@@ -216,7 +217,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.1)
 		Humanoid.FreeFalling:Wait()
 		StandoStates.ModeState = "Idle"
-		StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+		StandoCFrame = StarterStandoCFramePos
 		wait(.25)
 		setUpdateState(true)
 		HRP.Velocity = Vector3.new()
@@ -241,7 +242,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 					StandoStates.ModeState = "Idle"
 					Humanoid.WalkSpeed = 16
 					HRP.Anchored = false
-					StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+					StandoCFrame = StarterStandoCFramePos
 				end
 			elseif StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
 				if StandoStates.ModeState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.ModeState ~= StandoKeybinds[input.KeyCode] then
@@ -260,7 +261,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 					StandoStates.ModeState = "Idle"
 					Humanoid.WalkSpeed = 16
 					HRP.Anchored = false
-					StandoCFrame = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+					StandoCFrame = StarterStandoCFramePos
 				end
 			end
 		end
