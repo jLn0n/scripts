@@ -40,7 +40,7 @@ local Player = Players.LocalPlayer
 local Character = Player.Character
 local Humanoid = Character.Humanoid
 local HRP = Character.HumanoidRootPart
-local ChatMakeMsg = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
+local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
 local rad, sin, cos, random = math.rad, math.sin, math.cos, math.random
@@ -69,8 +69,15 @@ local StandoKeybinds = {
 }
 local StandoCFrame = CFrame.new()
 local anim, animSpeed = 0, 0
+local rayParams, rayResult, targetPlayer
 -- // MAIN
 if not Character:FindFirstChild("StandoCharacter") then
+	if game.PlaceId == 155615604 then
+		meleeEvent = RepStorage.meleeEvent
+		rayParams = RaycastParams.new()
+		rayParams.FilterDescendantsInstances = {Character}
+		rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+	end
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
 	local StandoHRP = StandoCharacter.HumanoidRootPart
@@ -108,6 +115,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 	local onCharacterRemoved = function() for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {} end
 	local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
 	local createMessage = function(msg) ChatMakeMsg:FireServer(((EnableChats and msg) and msg), "All") end
+	local setDamage = function(plr) meleeEvent:FireServer(((game.PlaceId == 155615604 and plr) and plr)) end
 
 	local Barrage = function()
 		StandoStates.ModeState = "Barrage"
@@ -121,6 +129,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait()
 		createMessage("MUDA! (x7)")
 		for _ = 1, 14 do
+			setDamage(targetPlayer)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
 			wait(.075)
@@ -130,6 +139,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 			wait(.075)
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
 			wait(.025)
+			setDamage(targetPlayer)
 		end
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
@@ -152,6 +162,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(125))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(25))
+		for _ = 1, 25 do setDamage(targetPlayer) end
 		wait(.5)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
@@ -273,7 +284,6 @@ if not Character:FindFirstChild("StandoCharacter") then
 		settings().Physics.AllowSleep = false
 		settings().Physics.ThrottleAdjustTime = -math.huge
 		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
-		Player.ReplicationFocus = Character
 
 		for _, object in ipairs(Character:GetChildren()) do
 			if object:IsA("Accessory") and object:FindFirstChild("Handle") then
@@ -286,6 +296,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 
 		for _, object in ipairs(StandoCharacter:GetDescendants()) do if object:IsA("BasePart") then object.CanCollide = false end end
 		for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:Lerp(motor.CFrame, .25) end
+
 		if StandoStates.Enabled then
 			if StandoStates.ModeState == "Idle" then
 				animSpeed = .375
@@ -307,6 +318,18 @@ if not Character:FindFirstChild("StandoCharacter") then
 		else
 			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + random(1, 100), 1000))
 			for _, motor in pairs(Motors) do motor.CFrame = motor.Cache end
+		end
+
+		if game.PlaceId == 155615604 then
+			rayResult = workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.85, rayParams)
+			if rayResult then
+				local hitPart = rayResult.Instance
+				if hitPart.Parent:IsA("Model") then
+					targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent)
+				elseif hitPart.Parent:IsA("Accessory") or hitPart.Parent:IsA("Tool") then
+					targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent.Parent)
+				end
+			end
 		end
 	end)
 
