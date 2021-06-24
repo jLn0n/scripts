@@ -115,7 +115,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 	local onCharacterRemoved = function() for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {} end
 	local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
 	local createMessage = function(msg) ChatMakeMsg:FireServer(((EnableChats and msg) and msg), "All") end
-	local setDamage = function(plr) meleeEvent:FireServer(((game.PlaceId == 155615604 and plr) and plr)) end
+	local setDamage = function(plr) if meleeEvent then meleeEvent:FireServer(plr and plr) end end
 
 	local Barrage = function()
 		StandoStates.ModeState = "Barrage"
