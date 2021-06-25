@@ -75,7 +75,7 @@ local rayParams, rayResult, targetPlayer
 if not Character:FindFirstChild("StandoCharacter") then
 	if game.PlaceId == 155615604 then
 		meleeEvent, rayParams = RepStorage.meleeEvent, RaycastParams.new()
-		rayParams.FilterType, rayParams.FilterDescendantsInstances = {Character}, Enum.RaycastFilterType.Blacklist
+		rayParams.FilterType, rayParams.FilterDescendantsInstances = Enum.RaycastFilterType.Blacklist, {Character}
 	end
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
