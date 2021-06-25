@@ -29,6 +29,7 @@ local RemoveHeadMesh = false -- removes the mesh of the desired head
 local EnableChats = false -- enables character chatting when a action was enabled / changed
 local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 local NerfedHitDamages = true -- if u want to nerf the damage of the stand (the damage thingy only works on prison life)
+local UseBuiltinNetless = true -- enables builtin netless that I created when enabled, if u want to use ur own netless just disable this, execute ur netless script first and this script
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
@@ -281,21 +282,23 @@ if not Character:FindFirstChild("StandoCharacter") then
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		anim = (anim % 100) + animSpeed / 10
 
-		settings().Physics.AllowSleep = false
-		settings().Physics.ThrottleAdjustTime = -math.huge
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
-
-		for _, object in ipairs(Character:GetChildren()) do
-			if object:IsA("Accessory") and object:FindFirstChild("Handle") then
-				object.Handle.CanCollide = false
-				object.Handle.Massless = true
-				object.Handle.Velocity = Vector3.new(0, 40, 0)
-				object.Handle.RotVelocity = Vector3.new()
-			end
-		end
-
 		for _, object in ipairs(StandoCharacter:GetDescendants()) do if object:IsA("BasePart") then object.CanCollide = false end end
 		for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:Lerp(motor.CFrame, .25) end
+
+		if UseBuiltinNetless then
+			settings().Physics.AllowSleep = false
+			settings().Physics.ThrottleAdjustTime = -math.huge
+			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+
+			for _, object in ipairs(Character:GetChildren()) do
+				if object:IsA("Accessory") and object:FindFirstChild("Handle") then
+					object.Handle.CanCollide = false
+					object.Handle.Massless = true
+					object.Handle.Velocity = Vector3.new(0, 40, 0)
+					object.Handle.RotVelocity = Vector3.new()
+				end
+			end
+		end
 
 		if StandoStates.Enabled then
 			if StandoStates.ModeState == "Idle" then
