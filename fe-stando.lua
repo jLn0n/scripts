@@ -45,7 +45,7 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
-local rad, sin, cos, random = math.rad, math.sin, math.cos, math.random
+local rad, sin, cos, RandomObj = math.rad, math.sin, math.cos, Random.new(os.clock())
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -129,7 +129,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait()
 		createMessage("MUDA! (x7)")
 		for _ = 1, 14 do
-			local damaging = (NerfHitDamages and random(1, 10) < 3 or true)
+			local damaging, damaging2 = (NerfHitDamages and RandomObj:NextInteger(1, 100) < 2 or true), (NerfHitDamages and RandomObj:NextInteger(1, 100) < 2 or true)
 			setDamage(damaging and targetPlayer or nil)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
@@ -140,7 +140,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 			wait(.075)
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
 			wait(.025)
-			setDamage(damaging and targetPlayer or nil)
+			setDamage(damaging2 and targetPlayer or nil)
 		end
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
@@ -163,7 +163,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(125))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(25))
-		for _ = 1, (NerfHitDamages and random(3, 6) or 25) do setDamage(targetPlayer) end
+		for _ = 1, (NerfHitDamages and RandomObj:NextInteger(4, 7) or 25) do setDamage(targetPlayer) end
 		wait(.65)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
@@ -319,7 +319,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 				Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(cos(anim) * .0125, 0, 0))
 			end
 		else
-			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + random(1, 100), 1000))
+			StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + RandomObj:NextInteger(1, 100), 1000))
 			for _, motor in pairs(Motors) do motor.CFrame = motor.Cache end
 		end
 
