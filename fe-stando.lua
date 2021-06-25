@@ -45,7 +45,8 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
-local rad, sin, cos, RandomObj = math.rad, math.sin, math.cos, Random.new(os.clock())
+local rad, sin, cos = math.rad, math.sin, math.cos
+local RandomObj = Random.new(os.clock())
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -289,6 +290,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 			settings().Physics.AllowSleep = false
 			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
 			settings().Physics.ThrottleAdjustTime = -math.huge
+			setsimulationradius(1e8, 1e8)
 
 			for _, object in ipairs(Character:GetChildren()) do
 				if object:IsA("Accessory") and object:FindFirstChild("Handle") then
