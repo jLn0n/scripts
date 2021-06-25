@@ -287,7 +287,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 
 		if UseBuiltinNetless then
 			settings().Physics.AllowSleep = false
-			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
 			settings().Physics.ThrottleAdjustTime = -math.huge
 
 			for _, object in ipairs(Character:GetChildren()) do
