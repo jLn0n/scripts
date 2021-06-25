@@ -2,8 +2,8 @@
 	Info:
 	Hey im jLn0n, u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
 	leaked fe stand script, I made this script on 6/2/2021 from scratch because the leaked FE stand script has been patched
-	by roblox, if the stando is gone while executed first pls rejoin and execute it again. Read things that I've written
-	below to guide you using the script.
+	by roblox, if the stando is gone or not showing when executed first on ur executor please rejoin and execute it again.
+	Read things that I've written below to guide you using the script.
 
 	Hats Needed:
 	https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable)
@@ -28,6 +28,7 @@ local HeadOffset = CFrame.new(Vector3.new(0, .125, .25)) -- offsets the desired 
 local RemoveHeadMesh = false -- removes the mesh of the desired head
 local EnableChats = false -- enables character chatting when a action was enabled / changed
 local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
+local NerfedHitDamages = true -- if u want to nerf the damage of the stand (the damage thingy only works on prison life)
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
@@ -73,10 +74,8 @@ local rayParams, rayResult, targetPlayer
 -- // MAIN
 if not Character:FindFirstChild("StandoCharacter") then
 	if game.PlaceId == 155615604 then
-		meleeEvent = RepStorage.meleeEvent
-		rayParams = RaycastParams.new()
-		rayParams.FilterDescendantsInstances = {Character}
-		rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+		meleeEvent, rayParams = RepStorage.meleeEvent, RaycastParams.new()
+		rayParams.FilterType, rayParams.FilterDescendantsInstances = {Character}, Enum.RaycastFilterType.Blacklist
 	end
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
@@ -114,14 +113,14 @@ if not Character:FindFirstChild("StandoCharacter") then
 
 	local onCharacterRemoved = function() for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {} end
 	local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
-	local createMessage = function(msg) ChatMakeMsg:FireServer(((EnableChats and msg) and msg), "All") end
+	local createMessage = function(msg) ChatMakeMsg:FireServer((EnableChats and msg) and msg, "All") end
 	local setDamage = function(plr) if meleeEvent then meleeEvent:FireServer(plr and plr) end end
 
 	local Barrage = function()
 		StandoStates.ModeState = "Barrage"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-		Humanoid.WalkSpeed = 3.45
+		Humanoid.WalkSpeed = 5.275
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
@@ -129,7 +128,8 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait()
 		createMessage("MUDA! (x7)")
 		for _ = 1, 14 do
-			setDamage(targetPlayer)
+			local damaging = (NerfedHitDamages and random(1, 10) < 3 or true)
+			setDamage(damaging and targetPlayer or nil)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
 			wait(.075)
@@ -139,7 +139,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 			wait(.075)
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
 			wait(.025)
-			setDamage(targetPlayer)
+			setDamage(damaging and targetPlayer or nil)
 		end
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
@@ -151,7 +151,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "HeavyPunch"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-		Humanoid.WalkSpeed = 3.725
+		Humanoid.WalkSpeed = 4.345
 		createMessage("MUDAAAAA!!")
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(0, 0, -rad(20))
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
@@ -162,8 +162,8 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(125))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(25))
-		for _ = 1, 25 do setDamage(targetPlayer) end
-		wait(.5)
+		for _ = 1, (NerfedHitDamages and random(4, 7) or 25) do setDamage(targetPlayer) end
+		wait(.65)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
 		StandoCFrame = StarterStandoCFramePos
@@ -214,7 +214,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 	end
 
 	local StandoJump = function()
-		StandoStates.ModeState = "HeavyPunch"
+		StandoStates.ModeState = "StandoJump"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, 2, 3.25))
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(25), 0, 0)
@@ -321,7 +321,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		end
 
 		if game.PlaceId == 155615604 then
-			rayResult = workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.85, rayParams)
+			rayResult = workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.825, rayParams)
 			if rayResult then
 				local hitPart = rayResult.Instance
 				if hitPart.Parent:IsA("Model") then
