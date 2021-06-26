@@ -26,8 +26,8 @@
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
 local HeadOffset = CFrame.new(Vector3.new(0, .125, .25)) -- offsets the desired head
 local RemoveHeadMesh = false -- removes the mesh of the desired head
+local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.65, 2.675))
 local EnableChats = false -- enables character chatting when a action was enabled / changed
-local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.4, 2.675))
 local NerfHitDamages = true -- if u want to nerf the damage of the stand (the damage thingy only works on prison life)
 local UseBuiltinNetless = true -- enables builtin netless that I created when enabled, if u want to use ur own netless just disable this, execute ur netless script first and this script
 -- // SERVICES
@@ -122,15 +122,15 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "Barrage"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-		Humanoid.WalkSpeed = 5.275
+		Humanoid.WalkSpeed = 6.3525
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache
 		wait()
-		createMessage("MUDA! (x7)")
-		for _ = 1, 14 do
-			local damaging, damaging2 = (NerfHitDamages and RandomObj:NextInteger(1, 100) < 2 or true), (NerfHitDamages and RandomObj:NextInteger(1, 100) < 2 or true)
+		createMessage("MUDA! (x10)")
+		for _ = 1, 10 do
+			local damaging, damaging2 = (NerfHitDamages and RandomObj:NextInteger(1, 10) > 5 or true), (NerfHitDamages and RandomObj:NextInteger(1, 10) > 5 or true)
 			setDamage(damaging and targetPlayer or nil)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
@@ -153,7 +153,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		StandoStates.ModeState = "HeavyPunch"
 		setUpdateState(false)
 		StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-		Humanoid.WalkSpeed = 4.345
+		Humanoid.WalkSpeed = 5.6575
 		createMessage("MUDAAAAA!!")
 		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(0, 0, -rad(20))
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
@@ -164,7 +164,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(125))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(25))
-		for _ = 1, (NerfHitDamages and RandomObj:NextInteger(4, 7) or 25) do setDamage(targetPlayer) end
+		for _ = 1, (NerfHitDamages and RandomObj:NextInteger(5, 7) or 10) do setDamage(targetPlayer) end
 		wait(.65)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
@@ -225,7 +225,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.RH.CFrame = Motors.RH.Cache * CFrame.Angles(0, rad(2.5), -rad(7.5))
 		Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, rad(2.5), rad(7.5))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(25), 0, 0)
-		HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 100)
+		HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 110)
 		for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
 		wait(.1)
 		Humanoid.FreeFalling:Wait()
@@ -288,8 +288,8 @@ if not Character:FindFirstChild("StandoCharacter") then
 
 		if UseBuiltinNetless then
 			settings().Physics.AllowSleep = false
-			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
-			settings().Physics.ThrottleAdjustTime = -math.huge
+			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+			settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
 			setsimulationradius(1e8, 1e8)
 
 			for _, object in ipairs(Character:GetChildren()) do
@@ -341,7 +341,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 	_G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 		StandoHRP.CFrame = HRP.CFrame * StandoCFrame
 		for PartName, object in pairs(HatParts) do
-			if object:FindFirstChild("Handle") then
+			if object and object:FindFirstChild("Handle") then
 				if PartName == "Torso1" then
 					object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
 				elseif PartName == "Torso2" then
