@@ -290,13 +290,13 @@ if not Character:FindFirstChild("StandoCharacter") then
 			settings().Physics.AllowSleep = false
 			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 			settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
-			setsimulationradius(1e8, 1e8)
+			setsimulationradius(1e10, 1e10)
 
 			for _, object in ipairs(Character:GetChildren()) do
 				if object:IsA("Accessory") and object:FindFirstChild("Handle") then
 					object.Handle.CanCollide = false
 					object.Handle.Massless = true
-					object.Handle.Velocity = Vector3.new(0, 40, 0)
+					object.Handle.Velocity = Vector3.new(-25.05, -25.05, -25.05)
 					object.Handle.RotVelocity = Vector3.new()
 				end
 			end
