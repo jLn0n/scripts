@@ -74,17 +74,15 @@ local StandoCFrame = CFrame.new()
 local anim, animSpeed = 0, 0
 local rayParams, rayResult, targetPlayer
 -- // MAIN
-if not Character:FindFirstChild("StandoCharacter") then
-	if game.PlaceId == 155615604 then
-		meleeEvent, rayParams = RepStorage.meleeEvent, RaycastParams.new()
-		rayParams.FilterType, rayParams.FilterDescendantsInstances = Enum.RaycastFilterType.Blacklist, {Character}
-	end
+if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.HumanoidRigType.R6 then
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
 	local StandoHRP = StandoCharacter.HumanoidRootPart
 	local ColorCE = Lighting:FindFirstChild("TimeStopCCE") or Instance.new("ColorCorrectionEffect")
 	StandoCharacter.Name, StandoCharacter.Parent = "StandoCharacter", Character
 	ColorCE.Name, ColorCE.Parent = "TimeStopCCE", Lighting
+	meleeEvent, rayParams = (game.PlaceId == 155615604 and RepStorage:FindFirstChild("meleeEvent") or nil), RaycastParams.new()
+	rayParams.FilterType, rayParams.FilterDescendantsInstances = Enum.RaycastFilterType.Blacklist, {Character}
 
 	local initMotor = function(motor)
 		return {
@@ -117,6 +115,17 @@ if not Character:FindFirstChild("StandoCharacter") then
 	local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
 	local createMessage = function(msg) ChatMakeMsg:FireServer((EnableChats and msg) and msg, "All") end
 	local setDamage = function(plr) if meleeEvent then meleeEvent:FireServer(plr and plr) end end
+	local anchorPlrs = function(arg1)
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= Player then
+				for _, object in ipairs(plr.Character:GetChildren()) do
+					if object:IsA("BasePart") then
+						object.Anchored = arg1
+					end
+				end
+			end
+		end
+	end
 
 	local Barrage = function()
 		StandoStates.ModeState = "Barrage"
@@ -197,6 +206,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		wait(.15)
 		Humanoid.WalkSpeed = 25
 		StandoStates.IsTimeStopMode = true
+		anchorPlrs(true)
 		settings():GetService("NetworkSettings").IncomingReplicationLag = math.huge
 		HRP.Anchored = false
 		Humanoid:ChangeState("Freefall")
@@ -212,6 +222,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		ColorCE.Enabled = false
 		StandoStates.CanUpdateStates = true
 		StandoStates.IsTimeStopMode = false
+		anchorPlrs(false)
 		settings():GetService("NetworkSettings").IncomingReplicationLag = 0
 	end
 
@@ -225,7 +236,7 @@ if not Character:FindFirstChild("StandoCharacter") then
 		Motors.RH.CFrame = Motors.RH.Cache * CFrame.Angles(0, rad(2.5), -rad(7.5))
 		Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, rad(2.5), rad(7.5))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(25), 0, 0)
-		HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 110)
+		HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 115)
 		for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
 		wait(.1)
 		Humanoid.FreeFalling:Wait()
@@ -325,15 +336,13 @@ if not Character:FindFirstChild("StandoCharacter") then
 			for _, motor in pairs(Motors) do motor.CFrame = motor.Cache end
 		end
 
-		if game.PlaceId == 155615604 then
-			rayResult = workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.825, rayParams)
-			if rayResult then
-				local hitPart = rayResult.Instance
-				if hitPart.Parent:IsA("Model") then
-					targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent)
-				elseif hitPart.Parent:IsA("Accessory") or hitPart.Parent:IsA("Tool") then
-					targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent.Parent)
-				end
+		rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.825, rayParams) or nil)
+		if rayResult then
+			local hitPart = rayResult.Instance
+			if hitPart.Parent:IsA("Model") then
+				targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent)
+			elseif hitPart.Parent:IsA("Accessory") or hitPart.Parent:IsA("Tool") then
+				targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent.Parent)
 			end
 		end
 	end)
