@@ -139,7 +139,7 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 		wait()
 		createMessage("MUDA! (x10)")
 		for _ = 1, 10 do
-			local damaging, damaging2 = (NerfHitDamages and RandomObj:NextInteger(1, 10) > 5 or true), (NerfHitDamages and RandomObj:NextInteger(1, 10) > 5 or true)
+			local damaging, damaging2 = (NerfHitDamages and RandomObj:NextInteger(1, 10) < 8 or true), (NerfHitDamages and RandomObj:NextInteger(1, 10) < 8 or true)
 			setDamage(damaging and targetPlayer or nil)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
@@ -301,10 +301,10 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 			settings().Physics.AllowSleep = false
 			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 			settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
-			Player.ReplicationFocus = Character
+			sethiddenproperty(Player, "MaximumSimulationRadius", 10000)
 
-			for _, object in ipairs(Character:GetChildren()) do
-				if object:IsA("Accessory") and object:FindFirstChild("Handle") then
+			for _, object in pairs(HatParts) do
+				if object and object:FindFirstChild("Handle") then
 					object.Handle.CanCollide = false
 					object.Handle.Massless = true
 					object.Handle.Velocity = Vector3.new(-25.05, -25.05, -25.05)
@@ -336,7 +336,7 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 			for _, motor in pairs(Motors) do motor.CFrame = motor.Cache end
 		end
 
-		rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.825, rayParams) or nil)
+		rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.8, rayParams) or nil)
 		if rayResult then
 			local hitPart = rayResult.Instance
 			if hitPart.Parent:IsA("Model") then
