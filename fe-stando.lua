@@ -45,8 +45,7 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
-local rad, sin, cos = math.rad, math.sin, math.cos
-local RandomObj = Random.new(os.clock())
+local rad, sin, cos, RandomObj = math.rad, math.sin, math.cos, Random.new(os.clock())
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -117,8 +116,9 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 	local setDamage = function(plr) if meleeEvent then meleeEvent:FireServer(plr and plr) end end
 	local anchorPlrs = function(arg1)
 		for _, plr in ipairs(Players:GetPlayers()) do
+			local plrChar = plr.Character or plr.CharacterAdded:Wait()
 			if plr ~= Player then
-				for _, object in ipairs(plr.Character:GetChildren()) do
+				for _, object in ipairs(plrChar:GetChildren()) do
 					if object:IsA("BasePart") then
 						object.Anchored = arg1
 					end
