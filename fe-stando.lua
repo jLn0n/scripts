@@ -6,7 +6,7 @@
 	Read things that I've written below to guide you using the script.
 
 	Hats Needed:
-	https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable)
+	https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable and remove the head mesh with RemoveHeadMesh variable)
 	https://www.roblox.com/catalog/451220849
 	https://www.roblox.com/catalog/63690008
 	https://www.roblox.com/catalog/48474294 (bundle: https://www.roblox.com/bundles/282)
@@ -25,10 +25,10 @@
 -- // SETTINGS
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
 local HeadOffset = CFrame.new(Vector3.new(0, .125, .25)) -- offsets the desired head
-local RemoveHeadMesh = false -- removes the mesh of the desired head
-local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.65, 2.675))
+local RemoveHeadMesh = false -- removes the mesh of the desired head when enabled
+local StarterStandoCFramePos = CFrame.new(Vector3.new(-1.25, 1.65, 2.675)) -- the starting position of the stand
 local EnableChats = false -- enables character chatting when a action was enabled / changed
-local NerfHitDamages = true -- if u want to nerf the damage of the stand (the damage thingy only works on prison life)
+local NerfHitDamages = false -- nerfs the damage from the stand, if u will have a stand fight just enable this lol (player damaging only works on prison life)
 local UseBuiltinNetless = true -- enables builtin netless that I created when enabled, if u want to use ur own netless just disable this, execute ur netless script first and this script
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
@@ -45,7 +45,8 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
-local rad, sin, cos, RandomObj = math.rad, math.sin, math.cos, Random.new(os.clock())
+local rad, sin, cos = math.rad, math.sin, math.cos
+local RandomObj = Random.new(os.clock())
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -139,7 +140,7 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 		wait()
 		createMessage("MUDA! (x10)")
 		for _ = 1, 10 do
-			local damaging, damaging2 = (NerfHitDamages and RandomObj:NextInteger(1, 10) < 8 or true), (NerfHitDamages and RandomObj:NextInteger(1, 10) < 8 or true)
+			local damaging, damaging2 = (not NerfHitDamages and true or RandomObj:NextInteger(1, 10) < 7), (not NerfHitDamages and true or RandomObj:NextInteger(1, 10) < 7)
 			setDamage(damaging and targetPlayer or nil)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
@@ -301,7 +302,6 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 			settings().Physics.AllowSleep = false
 			settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 			settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
-			sethiddenproperty(Player, "MaximumSimulationRadius", 10000)
 
 			for _, object in pairs(HatParts) do
 				if object and object:FindFirstChild("Handle") then
