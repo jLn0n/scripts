@@ -138,8 +138,8 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache
 		wait()
-		createMessage("MUDA! (x10)")
-		for _ = 1, 10 do
+		createMessage("MUDA! (x14)")
+		for _ = 1, 14 do
 			local damaging, damaging2 = (not NerfHitDamages and true or RandomObj:NextInteger(1, 10) < 7), (not NerfHitDamages and true or RandomObj:NextInteger(1, 10) < 7)
 			setDamage(damaging and targetPlayer or nil)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
