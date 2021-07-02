@@ -174,7 +174,7 @@ if not Character:FindFirstChild("StandoCharacter") and Humanoid.RigType == Enum.
 		Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.95, 0, -.25)) * CFrame.Angles(-rad(10), rad(25), rad(125))
 		Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(25))
-		for _ = 1, (NerfHitDamages and RandomObj:NextInteger(5, 7) or 10) do setDamage(targetPlayer) end
+		for _ = 1, (NerfHitDamages and RandomObj:NextInteger(5, 7) or 25) do setDamage(targetPlayer) end
 		wait(.65)
 		StandoStates.ModeState = "Idle"
 		setUpdateState(true)
