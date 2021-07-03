@@ -324,9 +324,9 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		if StandoStates.ModeState == "Idle" then
 			animSpeed = .325
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(5) + -cos(anim) * .05, 0, 0)
-			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.2875, .1575, -.225)) * CFrame.Angles(rad(89.95), -rad(4.745) + cos(anim) * .0425, rad(5.175))
+			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.2875, .205, -.285)) * CFrame.Angles(rad(87.5), -rad(4.745) + cos(anim) * .0425, rad(5.175))
 			Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, rad(2.5) * cos(anim) * .5)
-			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.2825, .2595, -.225)) * CFrame.Angles(rad(89.95), rad(4.165) + -cos(anim) * .0455, rad(5.095) + -cos(anim) * .0225)
+			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.2825, .345, -.285)) * CFrame.Angles(rad(87.5), rad(4.165) + -cos(anim) * .0455, rad(5.095) + -cos(anim) * .0225)
 			Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.325 + cos(anim) * .075, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .1)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .105)) * CFrame.Angles(0, 0, rad(7.5))
 		elseif StandoStates.ModeState == "MenanceIdle" then
