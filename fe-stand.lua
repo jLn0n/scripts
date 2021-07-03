@@ -2,7 +2,7 @@
 	Info:
 	Hey im jLn0n, u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
 	leaked fe stand script, I made this script on 6/2/2021 from scratch because the leaked FE stand script is messy and
-	patched by roblox, if the stando is gone or not showing when executed first on ur executor please rejoin and execute
+	patched by roblox, if the stand is gone or not showing when executed first on ur executor please rejoin and execute
 	it again. Please read the things that I've written below to guide you using the script.
 
 	Hats Needed: (Required! Please wear them after u bought them.)
@@ -15,12 +15,12 @@
 	https://www.roblox.com/catalog/62724852 (bundle: https://www.roblox.com/bundles/239)
 
 	Keybinds:
-	Q - Summon / Unsummon stando
+	Q - Summon / Unsummon stand
 	E - Barrage
 	R - HeavyPunch
 	F - Time Stop
-	Z - Stando Jump
-	G - Stando Idle Menance thingy
+	Z - Stand Jump
+	G - Stand Idle Menance thingy
 --]]
 -- // SETTINGS
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
@@ -73,8 +73,8 @@ local StandoCFrame = CFrame.new()
 local anim, animSpeed = 0, 0
 local rayParams, rayResult, targetPlayer
 -- // MAIN
-assert(not Character:FindFirstChild("StandoCharacter"), [[["FE-STANDO.LUA"]: Please reset to be able to run the script again!]])
-assert(Humanoid.RigType == Enum.HumanoidRigType.R6, [[["FE-STANDO.LUA"]: Sorry, This script will only work on R6 character rig only!]])
+assert(not Character:FindFirstChild("StandoCharacter"), [[["FE-STAND.LUA"]: Please reset to be able to run the script again!]])
+assert(Humanoid.RigType == Enum.HumanoidRigType.R6, [[["FE-STAND.LUA"]: Sorry, This script will only work on R6 character rig only!]])
 for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
 local StandoHRP = StandoCharacter.HumanoidRootPart
@@ -270,7 +270,7 @@ _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.ModeState ~= "MenanceIdle" then
 			StandoStates.Enabled = not StandoStates.Enabled
 			if StandoStates.Enabled then
-				createMessage("FE SUTANDO!")
+				createMessage("JoJo FE STAND!")
 				StandoStates.ModeState = "Idle"
 				Humanoid.WalkSpeed = 16
 				HRP.Anchored = false
@@ -323,10 +323,10 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 	if StandoStates.Enabled then
 		if StandoStates.ModeState == "Idle" then
 			animSpeed = .325
-			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(6) + -cos(anim) * .0475, 0, 0)
-			Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(7.5), -rad(7.25), -rad(4) + sin(anim) * .1)
-			Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, rad(5) * cos(anim) * 1)
-			Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .05, cos(anim) * .065)
+			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(5) + -cos(anim) * .05, 0, 0)
+			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.2875, .1575, -.225)) * CFrame.Angles(rad(89.95), -rad(4.745) + cos(anim) * .0425, rad(5.175))
+			Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, rad(2.5) * cos(anim) * .5)
+			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.2825, .2595, -.225)) * CFrame.Angles(rad(89.95), rad(4.165) + -cos(anim) * .0455, rad(5.095) + -cos(anim) * .0225)
 			Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.325 + cos(anim) * .075, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .1)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .105)) * CFrame.Angles(0, 0, rad(7.5))
 		elseif StandoStates.ModeState == "MenanceIdle" then
