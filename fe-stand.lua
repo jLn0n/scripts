@@ -1,6 +1,6 @@
 --[[
 	Info:
-	Hey im jLn0n, u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
+	Hey im jLn0n, u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the known
 	leaked fe stand script, I made this script on 6/2/2021 from scratch because the leaked FE stand script is messy and
 	patched by roblox, if the stand is gone or not showing when executed first on ur executor please rejoin and execute
 	it again. Please read the things that I've written below to guide you using the script.
