@@ -270,7 +270,7 @@ _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.ModeState ~= "MenanceIdle" then
 			StandoStates.Enabled = not StandoStates.Enabled
 			if StandoStates.Enabled then
-				createMessage("JoJo FE STAND!")
+				createMessage("FE STAND!")
 				StandoStates.ModeState = "Idle"
 				Humanoid.WalkSpeed = 16
 				HRP.Anchored = false
