@@ -45,7 +45,7 @@ local HRP = Character.HumanoidRootPart
 local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
-local rad, sin, cos, RandomObj = math.rad, math.sin, math.cos, Random.new(os.clock())
+local rad, sin, cos, floor, RandomObj = math.rad, math.sin, math.cos, math.floor, Random.new(os.clock())
 local HatParts = {
 	["Head"] = Character:FindFirstChild(HeadName),
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
@@ -71,7 +71,7 @@ local StandoKeybinds = {
 }
 local StandoCFrame = CFrame.new()
 local anim, animSpeed = 0, 0
-local rayParams, rayResult, targetPlayer
+local rayParams, targetPlayer
 -- // MAIN
 assert(not Character:FindFirstChild("StandoCharacter"), [[["FE-STAND.LUA"]: Please reset to be able to run the script again!]])
 assert(Humanoid.RigType == Enum.HumanoidRigType.R6, [[["FE-STAND.LUA"]: Sorry, This script will only work on R6 character rig only!]])
@@ -122,6 +122,7 @@ local onCharacterRemoved = function()
 		end
 	end
 end
+
 local anchorPlrs = function(arg1)
 	for _, plr in ipairs(Players:GetPlayers()) do
 		local plrChar = plr.Character or plr.CharacterAdded:Wait()
@@ -305,28 +306,13 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 	for _, object in ipairs(StandoCharacter:GetDescendants()) do if object:IsA("BasePart") then object.CanCollide = false end end
 	for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:Lerp(motor.CFrame, .25) end
 
-	if UseBuiltinNetless then
-		settings().Physics.AllowSleep = false
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
-		settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
-
-		for _, object in pairs(HatParts) do
-			if object and object:FindFirstChild("Handle") then
-				object.Handle.CanCollide = false
-				object.Handle.Massless = true
-				object.Handle.Velocity = Vector3.new(-25.05, -25.05, -25.05)
-				object.Handle.RotVelocity = Vector3.new()
-			end
-		end
-	end
-
 	if StandoStates.Enabled then
 		if StandoStates.ModeState == "Idle" then
 			animSpeed = .325
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(5) + -cos(anim) * .05, 0, 0)
-			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.2875, .205, -.285)) * CFrame.Angles(rad(87.5), -rad(4.745) + cos(anim) * .0425, rad(5.175))
+			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.1875, .205, -.335)) * CFrame.Angles(rad(87.25), -rad(2.675) + cos(anim) * .0425, -rad(3.675) + cos(anim) * .0225)
 			Motors.LH.CFrame = Motors.LH.Cache * CFrame.Angles(0, 0, rad(2.5) * cos(anim) * .5)
-			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.2825, .345, -.285)) * CFrame.Angles(rad(87.5), rad(4.165) + -cos(anim) * .0455, rad(5.095) + -cos(anim) * .0225)
+			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.1825, .345, -.335)) * CFrame.Angles(rad(87.25), rad(2.425) + -cos(anim) * .0455, rad(3.675) + -cos(anim) * .0225)
 			Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.325 + cos(anim) * .075, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .1)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .105)) * CFrame.Angles(0, 0, rad(7.5))
 		elseif StandoStates.ModeState == "MenanceIdle" then
@@ -343,13 +329,15 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		for _, motor in pairs(Motors) do motor.CFrame = motor.Cache end
 	end
 
-	rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.8, rayParams) or nil)
+	local rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.8, rayParams) or nil)
 	if rayResult then
 		local hitPart = rayResult.Instance
-		if hitPart.Parent:IsA("Model") then
-			targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent)
-		elseif hitPart.Parent:IsA("Accessory") or hitPart.Parent:IsA("Tool") then
-			targetPlayer = Players:GetPlayerFromCharacter(hitPart.Parent.Parent)
+		local rayTargetPlr = Players:GetPlayerFromCharacter(hitPart.Parent:IsA("Model") and hitPart.Parent or (hitPart.Parent:IsA("Accessory") or hitPart.Parent:IsA("Tool")) and hitPart.Parent.Parent or nil)
+		if rayTargetPlr then
+			local rTrgPlrChar = rayTargetPlr.Character
+			local rTrgPlrHRP = rTrgPlrChar.HumanoidRootPart
+			local plrDistFromTrgPlr = floor((HRP.Position - rTrgPlrHRP.Position).magnitude)
+			targetPlayer = (plrDistFromTrgPlr < 6 and rayTargetPlr or nil)
 		end
 	end
 end)
@@ -370,6 +358,23 @@ _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 		end
 	end
 end)
+
+if UseBuiltinNetless then
+	_G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
+		settings().Physics.AllowSleep = false
+		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+		settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
+
+		for _, object in pairs(HatParts) do
+			if object and object:FindFirstChild("Handle") then
+				object.Handle.CanCollide = false
+				object.Handle.Massless = true
+				object.Handle.Velocity = Vector3.new(-25.05, -25.05, -25.05)
+				object.Handle.RotVelocity = Vector3.new()
+			end
+		end
+	end)
+end
 
 _G.Connections[#_G.Connections + 1] = Humanoid.Died:Connect(onCharacterRemoved)
 _G.Connections[#_G.Connections + 1] = Player.CharacterRemoving:Connect(onCharacterRemoved)
