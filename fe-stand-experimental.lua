@@ -1,4 +1,4 @@
--- NOT RECOMENDED TO USE
+-- NOT RECOMMENDED TO USE
 --[[
 	Info:
 	Hey im jLn0n, u may know me as mengcap_CLEETUS or YEETED_CLEETUS on roblox, im not the original creator of the all known
