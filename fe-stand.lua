@@ -6,14 +6,14 @@
 	it again. Please read the things that I've written below to guide you using the script.
 
 	Hats Needed: (Required! Please wear them after u bought them.)
-	Head - FREE:      https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable and remove the head mesh with RemoveHeadMesh variable)
-	Left Arm - FREE:  https://www.roblox.com/catalog/63690008
-	Left Leg - FREE:  https://www.roblox.com/catalog/48474294 (bundle: https://www.roblox.com/bundles/282)
+	Head -      FREE: https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable and remove the head mesh with RemoveHeadMesh variable)
+	Left Arm -  FREE: https://www.roblox.com/catalog/63690008
+	Left Leg -  FREE: https://www.roblox.com/catalog/48474294  (bundle: https://www.roblox.com/bundles/282)
 	Right Arm - FREE: https://www.roblox.com/catalog/62234425
-	Right Leg - FREE: https://www.roblox.com/catalog/62724852 (bundle: https://www.roblox.com/bundles/239)
-	Torso - 40$:      https://www.roblox.com/catalog/29532720 (full torso part)
-	Torso1 - FREE:    https://www.roblox.com/catalog/48474313 (if u don't have robux)
-	Torso2 - FREE:    https://www.roblox.com/catalog/451220849 (if u don't have robux)
+	Right Leg - FREE: https://www.roblox.com/catalog/62724852  (bundle: https://www.roblox.com/bundles/239)
+	Torso -     40$:  https://www.roblox.com/catalog/29532720  (full torso part)
+	Torso1 -    FREE: https://www.roblox.com/catalog/48474313  (if u don't have robux)
+	Torso2 -    FREE: https://www.roblox.com/catalog/451220849 (if u don't have robux)
 
 	Keybinds:
 	Q - Summon / Unsummon stand
