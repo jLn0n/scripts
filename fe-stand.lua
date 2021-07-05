@@ -6,18 +6,20 @@
 	it again. Please read the things that I've written below to guide you using the script.
 
 	Hats Needed: (Required! Please wear them after u bought them.)
-	https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable and remove the head mesh with RemoveHeadMesh variable)
-	https://www.roblox.com/catalog/451220849
-	https://www.roblox.com/catalog/63690008
-	https://www.roblox.com/catalog/48474294 (bundle: https://www.roblox.com/bundles/282)
-	https://www.roblox.com/catalog/48474313
-	https://www.roblox.com/catalog/62234425
-	https://www.roblox.com/catalog/62724852 (bundle: https://www.roblox.com/bundles/239)
+	Head - FREE:      https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable and remove the head mesh with RemoveHeadMesh variable)
+	Left Arm - FREE:  https://www.roblox.com/catalog/63690008
+	Left Leg - FREE:  https://www.roblox.com/catalog/48474294 (bundle: https://www.roblox.com/bundles/282)
+	Right Arm - FREE: https://www.roblox.com/catalog/62234425
+	Right Leg - FREE: https://www.roblox.com/catalog/62724852 (bundle: https://www.roblox.com/bundles/239)
+	Torso - 40$:      https://www.roblox.com/catalog/29532720 (full torso part)
+	Torso1 - FREE:    https://www.roblox.com/catalog/48474313 (if u don't have robux)
+	Torso2 - FREE:    https://www.roblox.com/catalog/451220849 (if u don't have robux)
 
 	Keybinds:
 	Q - Summon / Unsummon stand
 	E - Barrage
 	R - HeavyPunch
+	T - Universal Barrage (barrages player that ur mouse is aiming at)
 	F - Time Stop
 	Z - Stand Jump
 	G - Stand Idle Menance thingy
@@ -39,6 +41,7 @@ local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 -- // OBJECTS
 local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
 local Character = Player.Character
 local Humanoid = Character.Humanoid
 local HRP = Character.HumanoidRootPart
@@ -51,13 +54,14 @@ local HatParts = {
 	["Left Arm"] = Character:FindFirstChild("Pal Hair"),
 	["Left Leg"] = Character:FindFirstChild("Pink Hair"),
 	["Right Arm"] = Character:FindFirstChild("Hat1"),
-	["Right Leg"] = Character:FindFirstChild("LavanderHair"),
+	["Right Leg"] = Character:FindFirstChild("Kate Hair"),
 	["Torso1"] = Character:FindFirstChild("Robloxclassicred"),
-	["Torso2"] = Character:FindFirstChild("Kate Hair")
+	["Torso2"] = Character:FindFirstChild("LavanderHair"),
+	["Torso"] = Character:FindFirstChild("SeeMonkey")
 }
 local StandoStates = {
 	["Enabled"] = false,
-	["ModeState"] = "Idle",
+	["AbilityState"] = "Idle",
 	["IsTimeStopMode"] = false,
 	["CanUpdateStates"] = true,
 	["CanUpdateStates2"] = true,
@@ -65,13 +69,14 @@ local StandoStates = {
 local StandoKeybinds = {
 	[Enum.KeyCode.E] = "Barrage",
 	[Enum.KeyCode.R] = "HeavyPunch",
+	[Enum.KeyCode.T] = "UnivBarrage",
 	[Enum.KeyCode.F] = "TimeStop",
 	[Enum.KeyCode.G] = "MenanceIdle",
 	[Enum.KeyCode.Z] = "StandoJump"
 }
 local StandoCFrame = CFrame.new()
 local anim, animSpeed = 0, 0
-local rayParams, targetPlayer
+local rayParams, targetPlayer, univBrgeTargetPlr, univBrgeTPlrHRP
 -- // MAIN
 assert(not Character:FindFirstChild("StandoCharacter"), [[["FE-STAND.LUA"]: Please reset to be able to run the script again!]])
 assert(Humanoid.RigType == Enum.HumanoidRigType.R6, [[["FE-STAND.LUA"]: Sorry, This script will only work on R6 character rig only!]])
@@ -82,7 +87,7 @@ local ColorCE = Lighting:FindFirstChild("TimeStopCCE") or Instance.new("ColorCor
 StandoCharacter.Name, StandoCharacter.Parent = "StandoCharacter", Character
 ColorCE.Name, ColorCE.Parent = "TimeStopCCE", Lighting
 meleeEvent, rayParams = (game.PlaceId == 155615604 and RepStorage:FindFirstChild("meleeEvent") or nil), RaycastParams.new()
-rayParams.FilterType, rayParams.FilterDescendantsInstances = Enum.RaycastFilterType.Blacklist, {Character}
+rayParams.FilterType, rayParams.FilterDescendantsInstances, Mouse.TargetFilter = Enum.RaycastFilterType.Blacklist, {Character}, Character
 
 for _, object in ipairs(StandoCharacter:GetChildren()) do if object:IsA("BasePart") then object.Transparency = 1 end end
 for PartName, object in pairs(HatParts) do
@@ -136,8 +141,16 @@ local anchorPlrs = function(arg1)
 	end
 end
 
+local getPlrFromBasePart = function(instance)
+	local PlrInstance = Players:GetPlayerFromCharacter(instance.Parent:IsA("Model") and instance.Parent
+		or (instance.Parent:IsA("Accessory") or instance.Parent:IsA("Tool")) and instance.Parent.Parent
+		or nil
+	)
+	return PlrInstance ~= Player and PlrInstance
+end
+
 local Barrage = function()
-	StandoStates.ModeState = "Barrage"
+	StandoStates.AbilityState = "Barrage"
 	setUpdateState(false)
 	StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
 	Humanoid.WalkSpeed = 9.275
@@ -161,14 +174,14 @@ local Barrage = function()
 		wait(.025)
 		setDamage(damaging2 and targetPlayer or nil)
 	end
-	StandoStates.ModeState = "Idle"
+	StandoStates.AbilityState = "Idle"
 	setUpdateState(true)
 	Humanoid.WalkSpeed = 16
 	StandoCFrame = StarterStandoCFramePos
 end
 
 local HeavyPunch = function()
-	StandoStates.ModeState = "HeavyPunch"
+	StandoStates.AbilityState = "HeavyPunch"
 	setUpdateState(false)
 	StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
 	Humanoid.WalkSpeed = 9.625
@@ -184,14 +197,44 @@ local HeavyPunch = function()
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(20))
 	for _ = 1, (NerfHitDamages and RandomObj:NextInteger(5, 7) or 25) do setDamage(targetPlayer) end
 	wait(.65)
-	StandoStates.ModeState = "Idle"
+	StandoStates.AbilityState = "Idle"
 	setUpdateState(true)
 	StandoCFrame = StarterStandoCFramePos
 	Humanoid.WalkSpeed = 16
 end
 
+local UnivBarrage = function() -- // TODO: Add damage support for prison life
+	StandoStates.AbilityState = "UnivBarrage"
+	setUpdateState(false)
+	Humanoid.WalkSpeed = 9.135
+	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target)
+	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
+		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
+		Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5), 0, 0)
+		Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
+		Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
+		Motors.RJoint.CFrame = Motors.RJoint.Cache
+		wait()
+		createMessage("MUDA! (x15)")
+		for _ = 1, 15 do
+			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1)) * CFrame.Angles(rad(7.5), 0, 0)
+			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-3.5, .5, 0)) * CFrame.Angles(rad(90), 0, -rad(32.5))
+			wait(.075)
+			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(-.1)) * CFrame.Angles(rad(7.25), 0, 0)
+			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(3.5, .5, 0)) * CFrame.Angles(rad(90), 0, rad(32.5))
+			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, -rad(90))
+			wait(.075)
+			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .5)) * CFrame.Angles(rad(90), 0, rad(90))
+			wait(.025)
+		end
+	end
+	StandoStates.AbilityState = "Idle"
+	setUpdateState(true)
+	Humanoid.WalkSpeed = 16
+end
+
 local TimeStop = function()
-	StandoStates.ModeState = "TimeStop"
+	StandoStates.AbilityState = "TimeStop"
 	StandoStates.CanUpdateStates = false
 	StandoCFrame = CFrame.new(Vector3.new(0, .25, -1.75))
 	HRP.Anchored = true
@@ -220,7 +263,7 @@ local TimeStop = function()
 	HRP.Anchored = false
 	Humanoid:ChangeState("Freefall")
 	StandoCFrame = StarterStandoCFramePos
-	StandoStates.ModeState = "Idle"
+	StandoStates.AbilityState = "Idle"
 	wait(8)
 	for _ = 1, 10 do
 		ColorCE.Saturation += .1
@@ -236,7 +279,7 @@ local TimeStop = function()
 end
 
 local StandoJump = function()
-	StandoStates.ModeState = "StandoJump"
+	StandoStates.AbilityState = "StandoJump"
 	setUpdateState(false)
 	StandoCFrame = CFrame.new(Vector3.new(0, 2, 3.25))
 	Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(25), 0, 0)
@@ -249,16 +292,16 @@ local StandoJump = function()
 	for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
 	wait(.1)
 	Humanoid.FreeFalling:Wait()
-	StandoStates.ModeState = "Idle"
+	StandoStates.AbilityState = "Idle"
 	StandoCFrame = StarterStandoCFramePos
-	wait(.125)
+	wait(.1)
 	setUpdateState(true)
 	HRP.Velocity = Vector3.new()
 end
 
 local MenanceIdleAnim = function()
 	for _, animObj in pairs(Humanoid:GetPlayingAnimationTracks()) do animObj:Stop() end
-	StandoStates.ModeState = "MenanceIdle"
+	StandoStates.AbilityState = "MenanceIdle"
 	setUpdateState(false)
 	HRP.Anchored = true
 	StandoCFrame = CFrame.new(Vector3.new(0, 0, 1.25)) * CFrame.Angles(0, rad(180), 0)
@@ -268,21 +311,23 @@ end
 
 _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Keyboard and not UIS:GetFocusedTextBox() and not GuiService.MenuIsOpen then
-		if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.ModeState ~= "MenanceIdle" then
+		if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.AbilityState ~= "MenanceIdle" then
 			StandoStates.Enabled = not StandoStates.Enabled
 			if StandoStates.Enabled then
 				createMessage("FE STAND!")
-				StandoStates.ModeState = "Idle"
+				StandoStates.AbilityState = "Idle"
 				Humanoid.WalkSpeed = 16
 				HRP.Anchored = false
 				StandoCFrame = StarterStandoCFramePos
 			end
 		elseif StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
-			if StandoStates.ModeState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.ModeState ~= StandoKeybinds[input.KeyCode] then
+			if StandoStates.AbilityState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.AbilityState ~= StandoKeybinds[input.KeyCode] then
 				if StandoKeybinds[input.KeyCode] == "Barrage" then
 					Barrage()
 				elseif StandoKeybinds[input.KeyCode] == "HeavyPunch" then
 					HeavyPunch()
+				elseif StandoKeybinds[input.KeyCode] == "UnivBarrage" then
+					UnivBarrage()
 				elseif StandoKeybinds[input.KeyCode] == "StandoJump" then
 					StandoJump()
 				elseif StandoKeybinds[input.KeyCode] == "MenanceIdle" then
@@ -290,8 +335,8 @@ _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 				elseif StandoKeybinds[input.KeyCode] == "TimeStop" and not StandoStates.IsTimeStopMode then
 					TimeStop()
 				end
-			elseif StandoStates.ModeState ~= "Idle" and StandoKeybinds[input.KeyCode] then
-				StandoStates.ModeState = "Idle"
+			elseif StandoStates.AbilityState ~= "Idle" and StandoKeybinds[input.KeyCode] then
+				StandoStates.AbilityState = "Idle"
 				Humanoid.WalkSpeed = 16
 				HRP.Anchored = false
 				StandoCFrame = StarterStandoCFramePos
@@ -307,7 +352,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 	for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:Lerp(motor.CFrame, .25) end
 
 	if StandoStates.Enabled then
-		if StandoStates.ModeState == "Idle" then
+		if StandoStates.AbilityState == "Idle" then
 			animSpeed = .325
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(5) + -cos(anim) * .05, 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.1875, .205, -.335)) * CFrame.Angles(rad(87.25), -rad(2.675) + cos(anim) * .0425, -rad(3.675) + cos(anim) * .0225)
@@ -315,7 +360,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.1825, .345, -.335)) * CFrame.Angles(rad(87.25), rad(2.425) + -cos(anim) * .0455, rad(3.675) + -cos(anim) * .0225)
 			Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.325 + cos(anim) * .075, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .1)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .105)) * CFrame.Angles(0, 0, rad(7.5))
-		elseif StandoStates.ModeState == "MenanceIdle" then
+		elseif StandoStates.AbilityState == "MenanceIdle" then
 			animSpeed = .325
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15) + cos(anim) * .0325, 0, rad(22.5))
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
@@ -332,7 +377,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 	local rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.8, rayParams) or nil)
 	if rayResult then
 		local hitPart = rayResult.Instance
-		local rayTargetPlr = Players:GetPlayerFromCharacter(hitPart.Parent:IsA("Model") and hitPart.Parent or (hitPart.Parent:IsA("Accessory") or hitPart.Parent:IsA("Tool")) and hitPart.Parent.Parent or nil)
+		local rayTargetPlr = getPlrFromBasePart(hitPart)
 		if rayTargetPlr then
 			local rTrgPlrChar = rayTargetPlr.Character
 			local rTrgPlrHRP = rTrgPlrChar.HumanoidRootPart
@@ -343,13 +388,18 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 end)
 
 _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
-	StandoHRP.CFrame = HRP.CFrame * StandoCFrame
+	StandoHRP.CFrame = (
+		(StandoStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr) and univBrgeTPlrHRP.CFrame * CFrame.new(Vector3.new(0, .575, 3.865))
+		or HRP.CFrame * StandoCFrame
+	)
 	for PartName, object in pairs(HatParts) do
 		if object and object:FindFirstChild("Handle") then
 			if PartName == "Torso1" then
 				object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
 			elseif PartName == "Torso2" then
 				object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(-.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
+			elseif PartName == "Torso" then
+				object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.Angles(rad(90), 0, 0)
 			elseif PartName == "Head" then
 				object.Handle.CFrame = StandoCharacter.Head.CFrame * HeadOffset
 			else
@@ -360,7 +410,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 end)
 
 if UseBuiltinNetless then
-	_G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
+	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		settings().Physics.AllowSleep = false
 		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 		settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
