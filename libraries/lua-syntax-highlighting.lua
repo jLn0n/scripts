@@ -3,7 +3,7 @@ local TextService = game:GetService("TextService")
 -- // OBJECTS
 local synHLUI_Template = game:GetObjects("rbxassetid://6969756999")[1]
 -- // MODULES
-local Lexer = loadstring(game:HttpGet("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/boatbomber-lexer.lua", true))()
+local Lexer = loadstring(game:HttpGet("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/libraries/boatbomber-lexer.lua", true))()
 -- // VARIABLES
 local sformat, smatch, sgsub, srep = string.format, string.match, string.gsub, string.rep
 local Lexer_scan = Lexer.scan
