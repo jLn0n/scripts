@@ -82,7 +82,7 @@ local rayParams, targetPlayer, univBrgeTargetPlr, univBrgeTPlrHRP
 assert(not Character:FindFirstChild("StandoCharacter"), [[["FE-STAND.LUA"]: Please reset to be able to run the script again!]])
 assert(Humanoid.RigType == Enum.HumanoidRigType.R6, [[["FE-STAND.LUA"]: Sorry, This script will only work on R6 character rig only!]])
 for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
-local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
+local StandoCharacter = game:GetObjects("rbxassetid://7054673805")[1]
 local StandoHRP = StandoCharacter.HumanoidRootPart
 local ColorCE = Lighting:FindFirstChild("TimeStopCCE") or Instance.new("ColorCorrectionEffect")
 StandoCharacter.Name, StandoCharacter.Parent = "StandoCharacter", Character
@@ -156,6 +156,7 @@ local HeavyPunch = function()
 	StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
 	Humanoid.WalkSpeed = 9.625
 	createMessage("MUDAAAAA!!")
+	StandoCharacter["Right Arm"].Trail.Enabled = true
 	Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(0, 0, -rad(20))
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(25), 0, rad(15))
@@ -166,6 +167,7 @@ local HeavyPunch = function()
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.825, 0, -.25)) * CFrame.Angles(-rad(15), rad(30), rad(120))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(20))
 	for _ = 1, (NerfHitDamages and RandomObj:NextInteger(5, 7) or 25) do setDamage(targetPlayer) end
+	StandoCharacter["Right Arm"].Trail.Enabled = false
 	wait(.65)
 	StandoStates.AbilityState = "Idle"
 	setUpdateState(true)
@@ -176,6 +178,8 @@ end
 local UnivBarrage = function() -- // TODO: Add damage support for prison life
 	StandoStates.AbilityState = "UnivBarrage"
 	setUpdateState(false)
+	StandoCharacter["Right Arm"].Trail.Enabled = true
+	StandoCharacter["Left Arm"].Trail.Enabled = true
 	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target)
 	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
 		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
@@ -183,6 +187,8 @@ local UnivBarrage = function() -- // TODO: Add damage support for prison life
 	end
 	StandoStates.AbilityState = "Idle"
 	setUpdateState(true)
+	StandoCharacter["Right Arm"].Trail.Enabled = false
+	StandoCharacter["Left Arm"].Trail.Enabled = false
 end
 
 local TimeStop = function()
@@ -246,7 +252,6 @@ local StandoJump = function()
 	Humanoid.FreeFalling:Wait()
 	StandoStates.AbilityState = "Idle"
 	StandoCFrame = StarterStandoCFramePos
-	wait(.1)
 	setUpdateState(true)
 	HRP.Velocity = Vector3.new()
 end
@@ -279,7 +284,9 @@ _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 					setUpdateState(false)
 					Humanoid.WalkSpeed = 9.275
 					StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-					createMessage("MUDA! (x15)")
+					StandoCharacter["Right Arm"].Trail.Enabled = true
+					StandoCharacter["Left Arm"].Trail.Enabled = true
+					createMessage("MUDA! (bunch of barrages lol)")
 				elseif StandoKeybinds[input.KeyCode] == "HeavyPunch" then
 					HeavyPunch()
 				elseif StandoKeybinds[input.KeyCode] == "UnivBarrage" then
@@ -337,11 +344,12 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(cos(anim) * .0125, 0, 0))
 		elseif StandoStates.AbilityState == "Barrage" or StandoStates.AbilityState == "UnivBarrage" then
 			animSpeed = 5
-			local damaging, damaging2 = (true), (true)
-			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5) + -sin(anim) * .025, 0, 0)
+			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5) + -cos(anim) * .025, 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-1 - sin(anim) * 1.5, .5, .325)) * CFrame.Angles(rad(90), 0, -rad(78.5))
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(1 - sin(anim) * 1.5, .5, .325)) * CFrame.Angles(rad(90), 0, rad(78.5))
-			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1 - cos(anim) * .025)) * CFrame.Angles(0, 0, cos(anim) * .025)
+			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(.1 - sin(anim) * .025)) * CFrame.Angles(0, 0, cos(anim) * .025)
+			local damaging = (not NerfHitDamages and true or RandomObj:NextInteger(1, 100) < 3)
+			setDamage(damaging and targetPlayer or nil)
 		end
 	else
 		StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + RandomObj:NextInteger(1, 100), 1000))
@@ -355,7 +363,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			local rTrgPlrChar = rayTargetPlr.Character
 			local rTrgPlrHRP = rTrgPlrChar.HumanoidRootPart
 			local plrDistFromTrgPlr = floor((HRP.Position - rTrgPlrHRP.Position).magnitude)
-			targetPlayer = (plrDistFromTrgPlr < 6 and rayTargetPlr or nil)
+			targetPlayer = (plrDistFromTrgPlr < 10 and rayTargetPlr or nil)
 		end
 	end
 end)
