@@ -7,14 +7,14 @@
 	it again. Please read the things that I've written below to guide you using the script.
 
 	Hats Needed: (Required! Please wear them after u bought them.)
-	Head -      FREE: https://www.roblox.com/catalog/617605556 (you can use any hats and offset the head with HeadOffset variable and remove the head mesh with RemoveHeadMesh variable)
+	Head -      FREE: https://www.roblox.com/catalog/617605556 (can be changed)
 	Left Arm -  FREE: https://www.roblox.com/catalog/63690008
 	Left Leg -  FREE: https://www.roblox.com/catalog/48474294  (bundle: https://www.roblox.com/bundles/282)
 	Right Arm - FREE: https://www.roblox.com/catalog/62234425
 	Right Leg - FREE: https://www.roblox.com/catalog/62724852  (bundle: https://www.roblox.com/bundles/239)
-	Torso -     40$:  https://www.roblox.com/catalog/29532720  (full torso part)
-	Torso1 -    FREE: https://www.roblox.com/catalog/48474313  (if u don't have robux)
-	Torso2 -    FREE: https://www.roblox.com/catalog/451220849 (if u don't have robux)
+	Torso -     40R$: https://www.roblox.com/catalog/29532720  (full torso part)
+	Torso1 -    FREE: https://www.roblox.com/catalog/48474313  (if u don't have robux, not needed when u have the full torso part)
+	Torso2 -    FREE: https://www.roblox.com/catalog/451220849 (if u don't have robux, not needed when u have the full torso part)
 
 	Keybinds:
 	Q - Summon / Unsummon stand
@@ -24,6 +24,11 @@
 	F - Time Stop
 	Z - Stand Jump
 	G - Stand Idle Menance thingy
+
+	TODO's: (* - unfinished | x - finished)
+	* Custom player animations
+	* Fling support
+	* Make dmgPlayer function damaging customizable
 --]]
 -- // SETTINGS
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
@@ -46,7 +51,7 @@ local Mouse = Player:GetMouse()
 local Character = Player.Character
 local Humanoid = Character.Humanoid
 local HRP = Character.HumanoidRootPart
-local ChatMakeMsg, meleeEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
+local ChatMakeMsg, ShootEvent, ReloadEvent, ItemHandler, TeamEvent = RepStorage.DefaultChatSystemChatEvents.SayMessageRequest
 -- // VARIABLES
 _G.Connections = _G.Connections or {}
 local rad, sin, cos, floor, RandomObj = math.rad, math.sin, math.cos, math.floor, Random.new(os.clock())
@@ -60,14 +65,14 @@ local HatParts = {
 	["Torso2"] = Character:FindFirstChild("LavanderHair"),
 	["Torso"] = Character:FindFirstChild("SeeMonkey")
 }
-local StandoStates = {
+local StandStates = {
 	["Enabled"] = true,
 	["AbilityState"] = "Idle",
 	["IsTimeStopMode"] = false,
 	["CanUpdateStates"] = true,
 	["CanUpdateStates2"] = true,
 }
-local StandoKeybinds = {
+local StandKeybinds = {
 	[Enum.KeyCode.E] = "Barrage",
 	[Enum.KeyCode.R] = "HeavyPunch",
 	[Enum.KeyCode.T] = "UnivBarrage",
@@ -77,20 +82,25 @@ local StandoKeybinds = {
 }
 local StandoCFrame = StarterStandoCFrame
 local anim, animSpeed = 0, 0
-local rayParams, targetPlayer, univBrgeTargetPlr, univBrgeTPlrHRP
+local rayParams, raycastedPlr, univBrgeTargetPlr, univBrgeTPlrHRP
 -- // MAIN
-assert(not Character:FindFirstChild("StandoCharacter"), [[["FE-STAND.LUA"]: Please reset to be able to run the script again!]])
+assert(not Character:FindFirstChild("StandCharacter"), [[["FE-STAND.LUA"]: Please reset to be able to run the script again!]])
 assert(Humanoid.RigType == Enum.HumanoidRigType.R6, [[["FE-STAND.LUA"]: Sorry, This script will only work on R6 character rig only!]])
 for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
-local StandoCharacter = game:GetObjects("rbxassetid://6843243348")[1]
-local StandoHRP = StandoCharacter.HumanoidRootPart
+local StandCharacter = game:GetObjects("rbxassetid://6843243348")[1]
+local StandoHRP = StandCharacter.HumanoidRootPart
 local ColorCE = Lighting:FindFirstChild("TimeStopCCE") or Instance.new("ColorCorrectionEffect")
-StandoCharacter.Name, StandoCharacter.Parent = "StandoCharacter", Character
+StandCharacter.Name, StandCharacter.Parent = "StandCharacter", Character
 ColorCE.Name, ColorCE.Parent = "TimeStopCCE", Lighting
-meleeEvent, rayParams = (game.PlaceId == 155615604 and RepStorage:FindFirstChild("meleeEvent") or nil), RaycastParams.new()
+ShootEvent, ReloadEvent, ItemHandler, TeamEvent =
+	(game.PlaceId == 155615604 and RepStorage.ShootEvent or nil),
+	(game.PlaceId == 155615604 and RepStorage.ReloadEvent or nil),
+	(game.PlaceId == 155615604 and workspace.Remote.ItemHandler or nil),
+	(game.PlaceId == 155615604 and workspace.Remote.TeamEvent or nil) -- idot thinking
+rayParams = RaycastParams.new()
 rayParams.FilterType, rayParams.FilterDescendantsInstances, Mouse.TargetFilter = Enum.RaycastFilterType.Blacklist, {Character}, Character
 
-for _, object in ipairs(StandoCharacter:GetChildren()) do if object:IsA("BasePart") then object.Transparency = 1 end end
+for _, object in ipairs(StandCharacter:GetChildren()) do if object:IsA("BasePart") then object.Transparency = 1 end end
 for PartName, object in pairs(HatParts) do
 	if object.Handle:FindFirstChildWhichIsA("Weld") then object.Handle:FindFirstChildWhichIsA("Weld"):Destroy() end
 	if PartName == "Head" and RemoveHeadMesh then
@@ -109,17 +119,16 @@ local initMotor = function(motor)
 end
 
 local Motors = {
-	["Neck"] = initMotor(StandoCharacter.Torso.Neck),
-	["RS"] = initMotor(StandoCharacter.Torso["Right Shoulder"]),
-	["LS"] = initMotor(StandoCharacter.Torso["Left Shoulder"]),
-	["RH"] = initMotor(StandoCharacter.Torso["Right Hip"]),
-	["LH"] = initMotor(StandoCharacter.Torso["Left Hip"]),
+	["Neck"] = initMotor(StandCharacter.Torso.Neck),
+	["RS"] = initMotor(StandCharacter.Torso["Right Shoulder"]),
+	["LS"] = initMotor(StandCharacter.Torso["Left Shoulder"]),
+	["RH"] = initMotor(StandCharacter.Torso["Right Hip"]),
+	["LH"] = initMotor(StandCharacter.Torso["Left Hip"]),
 	["RJoint"] = initMotor(StandoHRP.RootJoint),
 }
 
-local setUpdateState = function(boolean) StandoStates.CanUpdateStates, StandoStates.CanUpdateStates2 = boolean, boolean end
+local setUpdateState = function(boolean) StandStates.CanUpdateStates, StandStates.CanUpdateStates2 = boolean, boolean end
 local createMessage = function(msg) ChatMakeMsg:FireServer((EnableChats and msg) and msg, "All") end
-local setDamage = function(plr) if meleeEvent then meleeEvent:FireServer(plr and plr) end end
 local onCharacterRemoved = function()
 	for _, connection in ipairs(_G.Connections) do connection:Disconnect() end _G.Connections = {}
 	for _, object in pairs(HatParts) do
@@ -150,8 +159,54 @@ local getPlrFromBasePart = function(instance)
 	return PlrInstance ~= Player and PlrInstance
 end
 
+local dmgPlayer = function(targetPlr, damage)
+	if targetPlr and game.PlaceId == 155615604 then
+		ItemHandler:InvokeServer(workspace.Prison_ITEMS.giver["Remington 870"].ITEMPICKUP)
+		local aFuckingGun = Player.Backpack["Remington 870"]
+		local remote_args = {
+			[1] = {
+				[1] = {
+					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
+					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
+					["Cframe"] = targetPlr.Character.Head.CFrame,
+					["Hit"] = targetPlr.Character.Head
+				},
+				[2] = {
+					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
+					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
+					["Cframe"] = targetPlr.Character.Head.CFrame,
+					["Hit"] = targetPlr.Character.Head
+				},
+				[3] = {
+					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
+					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
+					["Cframe"] = targetPlr.Character.Head.CFrame,
+					["Hit"] = targetPlr.Character.Head
+				},
+				[4] = {
+					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
+					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
+					["Cframe"] = targetPlr.Character.Head.CFrame,
+					["Hit"] = targetPlr.Character.Head
+				},
+				[5] = {
+					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
+					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
+					["Cframe"] = targetPlr.Character.Head.CFrame,
+					["Hit"] = targetPlr.Character.Head
+				},
+			},
+			[2] = aFuckingGun
+		}
+		TeamEvent:FireServer("Medium stone grey")
+		ShootEvent:FireServer(table.unpack(remote_args))
+		ReloadEvent:FireServer(aFuckingGun)
+		TeamEvent:FireServer("Bright orange")
+	end
+end
+
 local HeavyPunch = function()
-	StandoStates.AbilityState = "HeavyPunch"
+	StandStates.AbilityState = "HeavyPunch"
 	setUpdateState(false)
 	StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
 	Humanoid.WalkSpeed = 9.625
@@ -165,29 +220,33 @@ local HeavyPunch = function()
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.825, 0, -.25)) * CFrame.Angles(-rad(15), rad(30), rad(120))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(20))
-	for _ = 1, (NerfHitDamages and RandomObj:NextInteger(5, 7) or 25) do setDamage(targetPlayer) end
+	dmgPlayer(raycastedPlr)
 	wait(.65)
-	StandoStates.AbilityState = "Idle"
+	StandStates.AbilityState = "Idle"
 	setUpdateState(true)
 	StandoCFrame = StarterStandoCFrame
 	Humanoid.WalkSpeed = 16
 end
 
-local UnivBarrage = function() -- // TODO: Add damage support for prison life
-	StandoStates.AbilityState = "UnivBarrage"
+local UnivBarrage = function()
+	StandStates.AbilityState = "UnivBarrage"
 	setUpdateState(false)
-	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target)
+	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target) or nil
 	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
 		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
-		wait(4) -- just waits 'till its done yielding
+		wait(.3)
+		dmgPlayer(univBrgeTargetPlr)
+		wait(3.375) -- just waits 'till its done yielding
 	end
-	StandoStates.AbilityState = "Idle"
-	setUpdateState(true)
+	if StandStates.AbilityState == "UnivBarrage" then
+		StandStates.AbilityState = "Idle"
+		setUpdateState(true)
+	end
 end
 
 local TimeStop = function()
-	StandoStates.AbilityState = "TimeStop"
-	StandoStates.CanUpdateStates = false
+	StandStates.AbilityState = "TimeStop"
+	StandStates.CanUpdateStates = false
 	StandoCFrame = CFrame.new(Vector3.new(0, .25, -1.75))
 	HRP.Anchored = true
 	ColorCE.Enabled = true
@@ -209,13 +268,13 @@ local TimeStop = function()
 	end
 	wait(.15)
 	Humanoid.WalkSpeed = 25
-	StandoStates.IsTimeStopMode = true
+	StandStates.IsTimeStopMode = true
 	anchorPlrs(true)
 	settings():GetService("NetworkSettings").IncomingReplicationLag = math.huge
 	HRP.Anchored = false
 	Humanoid:ChangeState("Freefall")
 	StandoCFrame = StarterStandoCFrame
-	StandoStates.AbilityState = "Idle"
+	StandStates.AbilityState = "Idle"
 	wait(8)
 	for _ = 1, 10 do
 		ColorCE.Saturation += .1
@@ -224,14 +283,14 @@ local TimeStop = function()
 	end
 	Humanoid.WalkSpeed = 16
 	ColorCE.Enabled = false
-	StandoStates.CanUpdateStates = true
-	StandoStates.IsTimeStopMode = false
+	StandStates.CanUpdateStates = true
+	StandStates.IsTimeStopMode = false
 	anchorPlrs(false)
 	settings():GetService("NetworkSettings").IncomingReplicationLag = 0
 end
 
 local StandoJump = function()
-	StandoStates.AbilityState = "StandoJump"
+	StandStates.AbilityState = "StandoJump"
 	setUpdateState(false)
 	StandoCFrame = CFrame.new(Vector3.new(0, 2, 3.25))
 	Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(25), 0, 0)
@@ -244,7 +303,7 @@ local StandoJump = function()
 	for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
 	wait(.1)
 	Humanoid.FreeFalling:Wait()
-	StandoStates.AbilityState = "Idle"
+	StandStates.AbilityState = "Idle"
 	StandoCFrame = StarterStandoCFrame
 	setUpdateState(true)
 	HRP.Velocity = Vector3.new()
@@ -252,7 +311,7 @@ end
 
 local MenanceIdleAnim = function()
 	for _, animObj in pairs(Humanoid:GetPlayingAnimationTracks()) do animObj:Stop() end
-	StandoStates.AbilityState = "MenanceIdle"
+	StandStates.AbilityState = "MenanceIdle"
 	setUpdateState(false)
 	HRP.Anchored = true
 	StandoCFrame = CFrame.new(Vector3.new(0, 0, 1.25)) * CFrame.Angles(0, rad(180), 0)
@@ -262,36 +321,36 @@ end
 
 _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Keyboard and not UIS:GetFocusedTextBox() and not GuiService.MenuIsOpen then
-		if input.KeyCode == Enum.KeyCode.Q and StandoStates.CanUpdateStates and StandoStates.AbilityState ~= "MenanceIdle" then
-			StandoStates.Enabled = not StandoStates.Enabled
-			if StandoStates.Enabled then
+		if input.KeyCode == Enum.KeyCode.Q and StandStates.CanUpdateStates and StandStates.AbilityState ~= "MenanceIdle" then
+			StandStates.Enabled = not StandStates.Enabled
+			if StandStates.Enabled then
 				createMessage("FE STAND!")
-				StandoStates.AbilityState = "Idle"
+				StandStates.AbilityState = "Idle"
 				Humanoid.WalkSpeed = 16
 				HRP.Anchored = false
 				StandoCFrame = StarterStandoCFrame
 			end
-		elseif StandoStates.Enabled and (StandoStates.CanUpdateStates or (StandoStates.CanUpdateStates2 and StandoStates.IsTimeStopMode)) then
-			if StandoStates.AbilityState == "Idle" and StandoKeybinds[input.KeyCode] and StandoStates.AbilityState ~= StandoKeybinds[input.KeyCode] then
-				if StandoKeybinds[input.KeyCode] == "Barrage" then
-					StandoStates.AbilityState = "Barrage"
+		elseif StandStates.Enabled and (StandStates.CanUpdateStates or (StandStates.CanUpdateStates2 and StandStates.IsTimeStopMode)) then
+			if StandStates.AbilityState == "Idle" and StandKeybinds[input.KeyCode] and StandStates.AbilityState ~= StandKeybinds[input.KeyCode] then
+				if StandKeybinds[input.KeyCode] == "Barrage" then
+					StandStates.AbilityState = "Barrage"
 					setUpdateState(false)
 					Humanoid.WalkSpeed = 9.275
 					StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
 					createMessage("MUDA! (bunch of barrages lol)")
-				elseif StandoKeybinds[input.KeyCode] == "HeavyPunch" then
+				elseif StandKeybinds[input.KeyCode] == "HeavyPunch" then
 					HeavyPunch()
-				elseif StandoKeybinds[input.KeyCode] == "UnivBarrage" then
+				elseif StandKeybinds[input.KeyCode] == "UnivBarrage" then
 					UnivBarrage()
-				elseif StandoKeybinds[input.KeyCode] == "StandoJump" then
+				elseif StandKeybinds[input.KeyCode] == "StandoJump" then
 					StandoJump()
-				elseif StandoKeybinds[input.KeyCode] == "MenanceIdle" then
+				elseif StandKeybinds[input.KeyCode] == "MenanceIdle" then
 					MenanceIdleAnim()
-				elseif StandoKeybinds[input.KeyCode] == "TimeStop" and not StandoStates.IsTimeStopMode then
+				elseif StandKeybinds[input.KeyCode] == "TimeStop" and not StandStates.IsTimeStopMode then
 					TimeStop()
 				end
-			elseif StandoStates.AbilityState ~= "Idle" and StandoKeybinds[input.KeyCode] then
-				StandoStates.AbilityState = "Idle"
+			elseif StandStates.AbilityState ~= "Idle" and StandKeybinds[input.KeyCode] then
+				StandStates.AbilityState = "Idle"
 				Humanoid.WalkSpeed = 16
 				HRP.Anchored = false
 				StandoCFrame = StarterStandoCFrame
@@ -302,8 +361,8 @@ end)
 
 _G.Connections[#_G.Connections + 1] = UIS.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.Keyboard and not UIS:GetFocusedTextBox() and not GuiService.MenuIsOpen then
-		if StandoKeybinds[input.KeyCode] == "Barrage" and StandoStates.AbilityState == "Barrage" then
-			StandoStates.AbilityState = "Idle"
+		if StandKeybinds[input.KeyCode] == "Barrage" and StandStates.AbilityState == "Barrage" then
+			StandStates.AbilityState = "Idle"
 			setUpdateState(true)
 			Humanoid.WalkSpeed = 16
 			StandoCFrame = StarterStandoCFrame
@@ -314,11 +373,11 @@ end)
 _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 	anim = (anim % 100) + animSpeed / 10
 
-	for _, object in ipairs(StandoCharacter:GetDescendants()) do if object:IsA("BasePart") then object.CanCollide = false end end
+	for _, object in ipairs(StandCharacter:GetDescendants()) do if object:IsA("BasePart") then object.CanCollide = false end end
 	for _, motor in pairs(Motors) do motor.Object.Transform = motor.Object.Transform:Lerp(motor.CFrame, .675) end
 
-	if StandoStates.Enabled then
-		if StandoStates.AbilityState == "Idle" then
+	if StandStates.Enabled then
+		if StandStates.AbilityState == "Idle" then
 			animSpeed = .325
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(5) + -cos(anim) * .05, 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-.1875, .205, -.335)) * CFrame.Angles(rad(87.25), -rad(2.675) + cos(anim) * .0425, -rad(3.675) + cos(anim) * .0225)
@@ -326,7 +385,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.1825, .345, -.335)) * CFrame.Angles(rad(87.25), rad(2.425) + -cos(anim) * .0455, rad(3.675) + -cos(anim) * .0225)
 			Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.325 + cos(anim) * .075, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .1)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(0, 0, -cos(anim) * .105)) * CFrame.Angles(0, 0, rad(7.5))
-		elseif StandoStates.AbilityState == "MenanceIdle" then
+		elseif StandStates.AbilityState == "MenanceIdle" then
 			animSpeed = .325
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(15) + cos(anim) * .0325, 0, rad(22.5))
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(rad(6), -rad(6.5) + cos(anim) * .075, -rad(4) + sin(anim) * .05)
@@ -334,20 +393,23 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(3.5), cos(anim) * .03, cos(anim) * .05)
 			Motors.RH.CFrame = Motors.RH.Cache * CFrame.new(Vector3.new(.25 + cos(anim) * .05, 0, 0)) * CFrame.Angles(0, 0, -rad(10) + sin(anim) * .05)
 			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.new(Vector3.new(cos(anim) * .0125, 0, 0))
-		elseif StandoStates.AbilityState == "Barrage" or StandoStates.AbilityState == "UnivBarrage" then
+		elseif StandStates.AbilityState == "Barrage" or StandStates.AbilityState == "UnivBarrage" then
 			animSpeed = 5
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5) + -cos(anim) * .025, 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-1 - sin(anim) * 1.5, .5, .325 + -sin(anim) * .25)) * CFrame.Angles(rad(90), 0, -rad(77.5))
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(1 - sin(anim) * 1.5, .5, .325 + sin(anim) * .25)) * CFrame.Angles(rad(90), 0, rad(77.5))
 			Motors.RJoint.CFrame = Motors.RJoint.Cache
-			local damaging = (not NerfHitDamages and true or RandomObj:NextInteger(1, 100) < 3)
-			setDamage(damaging and targetPlayer or nil)
+			if StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTargetPlr.Character.Humanoid.Health == 0 then
+				univBrgeTargetPlr, univBrgeTPlrHRP = nil, nil
+				StandStates.AbilityState = "Idle"
+				setUpdateState(true)
+			end
 		end
 	else
 		StandoCFrame = CFrame.new(Vector3.new(1000, 1000 + RandomObj:NextInteger(1, 100), 1000))
 	end
 
-	local rayResult = (meleeEvent and workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.8, rayParams) or nil)
+	local rayResult = workspace:Raycast(HRP.Position, HRP.CFrame.LookVector * 3.8, rayParams)
 	if rayResult then
 		local hitPart = rayResult.Instance
 		local rayTargetPlr = getPlrFromBasePart(hitPart)
@@ -355,28 +417,29 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			local rTrgPlrChar = rayTargetPlr.Character
 			local rTrgPlrHRP = rTrgPlrChar.HumanoidRootPart
 			local plrDistFromTrgPlr = floor((HRP.Position - rTrgPlrHRP.Position).magnitude)
-			targetPlayer = (plrDistFromTrgPlr < 10 and rayTargetPlr or nil)
+			raycastedPlr = (plrDistFromTrgPlr < 5 and rayTargetPlr or nil)
 		end
 	end
 end)
 
 _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 	StandoHRP.CFrame = (
-		(StandoStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTPlrHRP) and univBrgeTPlrHRP.CFrame * CFrame.new(Vector3.new(0, .45, 3.865))
+		(StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTPlrHRP) and univBrgeTPlrHRP.CFrame * CFrame.new(Vector3.new(0, .45, 3.865))
 		or HRP.CFrame * StandoCFrame
 	)
 	for PartName, object in pairs(HatParts) do
 		if object and object:FindFirstChild("Handle") then
+			object.Handle.LocalTransparencyModifier = (Character.Head.LocalTransparencyModifier == 1 and .5 or Character.Head.LocalTransparencyModifier)
 			if PartName == "Torso1" then
-				object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
+				object.Handle.CFrame = StandCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
 			elseif PartName == "Torso2" then
-				object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.new(Vector3.new(-.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
+				object.Handle.CFrame = StandCharacter.Torso.CFrame * CFrame.new(Vector3.new(-.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
 			elseif PartName == "Torso" then
-				object.Handle.CFrame = StandoCharacter.Torso.CFrame * CFrame.Angles(rad(90), 0, 0)
+				object.Handle.CFrame = StandCharacter.Torso.CFrame * CFrame.Angles(rad(90), 0, 0)
 			elseif PartName == "Head" then
-				object.Handle.CFrame = StandoCharacter.Head.CFrame * HeadOffset
+				object.Handle.CFrame = StandCharacter.Head.CFrame * HeadOffset
 			else
-				object.Handle.CFrame = StandoCharacter[PartName].CFrame * CFrame.Angles(rad(90), 0, 0)
+				object.Handle.CFrame = StandCharacter[PartName].CFrame * CFrame.Angles(rad(90), 0, 0)
 			end
 		end
 	end
@@ -388,8 +451,8 @@ if UseBuiltinNetless then
 	-- // MAIN
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		settings().Physics.AllowSleep = false
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
-		settings().Physics.ThrottleAdjustTime = 0 / 0
+		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+		settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
 		NetworkClient:SetOutgoingKBPSLimit(math.huge)
 
 		for _, object in pairs(HatParts) do
