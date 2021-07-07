@@ -29,6 +29,7 @@
 	* Custom player animations
 	* Fling support
 	* Make dmgPlayer function damaging customizable
+	* maybe create a seperate renderstep for barrage and Univ. Barrage damage
 --]]
 -- // SETTINGS
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
@@ -152,55 +153,34 @@ local anchorPlrs = function(arg1)
 end
 
 local getPlrFromBasePart = function(instance)
-	local PlrInstance = Players:GetPlayerFromCharacter(instance.Parent:IsA("Model") and instance.Parent
+	local PlrInstance = Players:GetPlayerFromCharacter(instance.Parent:IsA("Model") and Players:GetPlayerFromCharacter(instance.Parent) and instance.Parent
 		or (instance.Parent:IsA("Accessory") or instance.Parent:IsA("Tool")) and instance.Parent.Parent
 		or nil
 	)
 	return PlrInstance ~= Player and PlrInstance
 end
 
-local dmgPlayer = function(targetPlr, damage)
-	if targetPlr and game.PlaceId == 155615604 then
-		ItemHandler:InvokeServer(workspace.Prison_ITEMS.giver["Remington 870"].ITEMPICKUP)
-		local aFuckingGun = Player.Backpack["Remington 870"]
+local dmgPlayer = function(targetPlr, damage) -- // TODO: make the custom damage work
+	if targetPlr and targetPlr.Character and game.PlaceId == 155615604 then
+		ItemHandler:InvokeServer(workspace.Prison_ITEMS.giver.M9.ITEMPICKUP)
+		local justANormalGun = Player.Backpack:FindFirstChild("M9") or Character:FindFirstChildWhichIsA("Tool")
+		local gunStates = require(justANormalGun.GunStates)
+		local headOfThePlr = targetPlr.Character:FindFirstChild("Head")
+		gunStates.Damage = damage
 		local remote_args = {
 			[1] = {
 				[1] = {
-					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
+					["RayObject"] = Ray.new(justANormalGun.Muzzle.Position, headOfThePlr.Position),
 					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
-					["Cframe"] = targetPlr.Character.Head.CFrame,
-					["Hit"] = targetPlr.Character.Head
-				},
-				[2] = {
-					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
-					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
-					["Cframe"] = targetPlr.Character.Head.CFrame,
-					["Hit"] = targetPlr.Character.Head
-				},
-				[3] = {
-					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
-					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
-					["Cframe"] = targetPlr.Character.Head.CFrame,
-					["Hit"] = targetPlr.Character.Head
-				},
-				[4] = {
-					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
-					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
-					["Cframe"] = targetPlr.Character.Head.CFrame,
-					["Hit"] = targetPlr.Character.Head
-				},
-				[5] = {
-					["RayObject"] = Ray.new(aFuckingGun.Muzzle.Position, targetPlr.Character.Head.Position),
-					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
-					["Cframe"] = targetPlr.Character.Head.CFrame,
-					["Hit"] = targetPlr.Character.Head
+					["Cframe"] = headOfThePlr.CFrame,
+					["Hit"] = headOfThePlr
 				},
 			},
-			[2] = aFuckingGun
+			[2] = justANormalGun
 		}
 		TeamEvent:FireServer("Medium stone grey")
 		ShootEvent:FireServer(table.unpack(remote_args))
-		ReloadEvent:FireServer(aFuckingGun)
+		ReloadEvent:FireServer(justANormalGun)
 		TeamEvent:FireServer("Bright orange")
 	end
 end
@@ -220,7 +200,7 @@ local HeavyPunch = function()
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.825, 0, -.25)) * CFrame.Angles(-rad(15), rad(30), rad(120))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(20))
-	dmgPlayer(raycastedPlr)
+	dmgPlayer(raycastedPlr, NerfHitDamages and RandomObj:NextInteger(25, 50) or 50)
 	wait(.65)
 	StandStates.AbilityState = "Idle"
 	setUpdateState(true)
@@ -234,9 +214,7 @@ local UnivBarrage = function()
 	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target) or nil
 	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
 		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
-		wait(.3)
-		dmgPlayer(univBrgeTargetPlr)
-		wait(3.375) -- just waits 'till its done yielding
+		wait(3.675) -- just waits 'till its done yielding
 	end
 	if StandStates.AbilityState == "UnivBarrage" then
 		StandStates.AbilityState = "Idle"
@@ -337,7 +315,7 @@ _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 					setUpdateState(false)
 					Humanoid.WalkSpeed = 9.275
 					StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-					createMessage("MUDA! (bunch of barrages lol)")
+					createMessage("MUDA! (a bunch of barrages lol)")
 				elseif StandKeybinds[input.KeyCode] == "HeavyPunch" then
 					HeavyPunch()
 				elseif StandKeybinds[input.KeyCode] == "UnivBarrage" then
@@ -399,6 +377,10 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-1 - sin(anim) * 1.5, .5, .325 + -sin(anim) * .25)) * CFrame.Angles(rad(90), 0, -rad(77.5))
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(1 - sin(anim) * 1.5, .5, .325 + sin(anim) * .25)) * CFrame.Angles(rad(90), 0, rad(77.5))
 			Motors.RJoint.CFrame = Motors.RJoint.Cache
+			dmgPlayer(
+				StandStates.AbilityState == "Barrage" and raycastedPlr
+				or StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr,
+			NerfHitDamages and 3.25 or 5)
 			if StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTargetPlr.Character.Humanoid.Health == 0 then
 				univBrgeTargetPlr, univBrgeTPlrHRP = nil, nil
 				StandStates.AbilityState = "Idle"
@@ -415,7 +397,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		local rayTargetPlr = getPlrFromBasePart(hitPart)
 		if rayTargetPlr then
 			local rTrgPlrChar = rayTargetPlr.Character
-			local rTrgPlrHRP = rTrgPlrChar.HumanoidRootPart
+			local rTrgPlrHRP = rTrgPlrChar:FindFirstChild("HumanoidRootPart") or rTrgPlrChar:FindFirstChild("Head")
 			local plrDistFromTrgPlr = floor((HRP.Position - rTrgPlrHRP.Position).magnitude)
 			raycastedPlr = (plrDistFromTrgPlr < 5 and rayTargetPlr or nil)
 		end
