@@ -162,10 +162,11 @@ end
 
 local dmgPlayer = function(targetPlr, damage) -- // TODO: make the custom damage work
 	if targetPlr and targetPlr.Character and game.PlaceId == 155615604 then
-		ItemHandler:InvokeServer(workspace.Prison_ITEMS.giver.M9.ITEMPICKUP)
-		local justANormalGun = Player.Backpack:FindFirstChild("M9") or Character:FindFirstChildWhichIsA("Tool")
-		local gunStates = require(justANormalGun.GunStates)
+		ItemHandler:InvokeServer(workspace.Prison_ITEMS.giver["AK-47"].ITEMPICKUP)
+		local justANormalGun = Player.Backpack:FindFirstChild("AK-47") or Character:FindFirstChildWhichIsA("Tool")
 		local headOfThePlr = targetPlr.Character:FindFirstChild("Head")
+		local gunStates = require(justANormalGun.GunStates)
+		print(gunStates.Damage)
 		gunStates.Damage = damage
 		local remote_args = {
 			[1] = {
@@ -377,10 +378,6 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-1 - sin(anim) * 1.5, .5, .325 + -sin(anim) * .25)) * CFrame.Angles(rad(90), 0, -rad(77.5))
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(1 - sin(anim) * 1.5, .5, .325 + sin(anim) * .25)) * CFrame.Angles(rad(90), 0, rad(77.5))
 			Motors.RJoint.CFrame = Motors.RJoint.Cache
-			dmgPlayer(
-				StandStates.AbilityState == "Barrage" and raycastedPlr
-				or StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr,
-			NerfHitDamages and 3.25 or 5)
 			if StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTargetPlr.Character.Humanoid.Health == 0 then
 				univBrgeTargetPlr, univBrgeTPlrHRP = nil, nil
 				StandStates.AbilityState = "Idle"
@@ -404,6 +401,17 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 	end
 end)
 
+_G.Connections[#_G.Connections + 1] = RunService.RenderStepped:Connect(function()
+	if StandStates.AbilityState == "Barrage" or StandStates.AbilityState == "UnivBarrage" then
+		dmgPlayer(
+			StandStates.AbilityState == "Barrage" and raycastedPlr
+			or StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr,
+			NerfHitDamages and 3.25 or 5
+		)
+		wait(.35)
+	end
+end)
+
 _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 	StandoHRP.CFrame = (
 		(StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTPlrHRP) and univBrgeTPlrHRP.CFrame * CFrame.new(Vector3.new(0, .45, 3.865))
@@ -411,7 +419,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 	)
 	for PartName, object in pairs(HatParts) do
 		if object and object:FindFirstChild("Handle") then
-			object.Handle.LocalTransparencyModifier = (Character.Head.LocalTransparencyModifier == 1 and .5 or Character.Head.LocalTransparencyModifier)
+			object.Handle.LocalTransparencyModifier = (Character.Head.LocalTransparencyModifier > .5 and .5 or Character.Head.LocalTransparencyModifier)
 			if PartName == "Torso1" then
 				object.Handle.CFrame = StandCharacter.Torso.CFrame * CFrame.new(Vector3.new(.5, 0, 0)) * CFrame.Angles(rad(90), 0, 0)
 			elseif PartName == "Torso2" then
@@ -428,14 +436,10 @@ _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 end)
 
 if UseBuiltinNetless then
-	-- // SERVICES
-	local NetworkClient = game:GetService("NetworkClient")
-	-- // MAIN
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		settings().Physics.AllowSleep = false
 		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
-		settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
-		NetworkClient:SetOutgoingKBPSLimit(math.huge)
+		settings().Physics.ThrottleAdjustTime = 0 / 0
 
 		for _, object in pairs(HatParts) do
 			if object and object:FindFirstChild("Handle") then
