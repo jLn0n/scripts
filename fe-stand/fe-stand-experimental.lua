@@ -7,29 +7,29 @@
 	it again. Please read the things that I've written below to guide you using the script.
 
 	Hats Needed: (Required! Please wear them after u bought them.)
-	Head -      FREE: https://www.roblox.com/catalog/617605556 (can be changed)
-	Left Arm -  FREE: https://www.roblox.com/catalog/63690008
-	Left Leg -  FREE: https://www.roblox.com/catalog/48474294  (bundle: https://www.roblox.com/bundles/282)
+	Head      - FREE: https://www.roblox.com/catalog/617605556 (can be changed)
+	Left Arm  - FREE: https://www.roblox.com/catalog/63690008
+	Left Leg  - FREE: https://www.roblox.com/catalog/48474294  (bundle: https://www.roblox.com/bundles/282)
 	Right Arm - FREE: https://www.roblox.com/catalog/62234425
 	Right Leg - FREE: https://www.roblox.com/catalog/62724852  (bundle: https://www.roblox.com/bundles/239)
-	Torso -     40R$: https://www.roblox.com/catalog/29532720  (full torso part)
-	Torso1 -    FREE: https://www.roblox.com/catalog/48474313  (if u don't have robux, not needed when u have the full torso part)
-	Torso2 -    FREE: https://www.roblox.com/catalog/451220849 (if u don't have robux, not needed when u have the full torso part)
+	Torso     - 40R$: https://www.roblox.com/catalog/29532720  (full torso part)
+	Torso1    - FREE: https://www.roblox.com/catalog/48474313  (not needed when u have the full torso part)
+	Torso2    - FREE: https://www.roblox.com/catalog/451220849 (not needed when u have the full torso part)
 
 	Keybinds:
 	Q - Summon / Unsummon stand
 	E - Barrage
 	R - HeavyPunch
-	T - Universal Barrage (barrages player that ur mouse is aiming at)
+	T - Universal Barrage (barrage the player that ur mouse is aiming at)
 	F - Time Stop
 	Z - Stand Jump
 	G - Stand Idle Menance thingy
 
 	TODO's: (* - unfinished | x - finished)
+	x Make dmgPlayer function damaging customizable
+	x maybe create a seperate renderstep for barrage and Univ. Barrage damage
 	* Custom player animations
 	* Fling support
-	* Make dmgPlayer function damaging customizable
-	* maybe create a seperate renderstep for barrage and Univ. Barrage damage
 --]]
 -- // SETTINGS
 local HeadName = "MediHood" -- you can find the name of ur desired head by using dex or viewing it with btroblox (chrome extension)
@@ -37,7 +37,6 @@ local HeadOffset = CFrame.new(Vector3.new(0, .125, .25)) -- offsets the desired 
 local RemoveHeadMesh = false -- removes the mesh of the desired head when enabled
 local StarterStandoCFrame = CFrame.new(Vector3.new(-1.75, 1.65, 2.5)) -- the starting position of the stand
 local EnableChats = false -- enables character chatting when a action was enabled / changed
-local NerfHitDamages = false -- nerfs the damage from the stand, if u will have a stand fight just enable this lol (player damaging only works on prison life)
 local UseBuiltinNetless = true -- enables builtin netless when enabled, if u want to use ur own netless just disable this, execute ur netless script first and this script
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
@@ -160,26 +159,33 @@ local getPlrFromBasePart = function(instance)
 	return PlrInstance ~= Player and PlrInstance
 end
 
-local dmgPlayer = function(targetPlr, damage) -- // TODO: make the custom damage work
+local createDmgArgs = function(daGun, targetPlr)
+	local targettingBasePart = targetPlr.Character:FindFirstChild("Torso")
+	return {
+		["RayObject"] = Ray.new(daGun.Muzzle.Position, targettingBasePart.Position),
+		["Distance"] = (HRP.Position - targettingBasePart.Position).Magnitude,
+		["Cframe"] = targettingBasePart.CFrame,
+		["Hit"] = targettingBasePart
+	}
+end
+
+local dmgPlayer = function(targetPlr, damage)
+	damage = damage or 1
 	if targetPlr and targetPlr.Character and game.PlaceId == 155615604 then
+		TeamEvent:FireServer("Medium stone grey")
 		ItemHandler:InvokeServer(workspace.Prison_ITEMS.giver["AK-47"].ITEMPICKUP)
 		local justANormalGun = Player.Backpack:FindFirstChild("AK-47") or Character:FindFirstChildWhichIsA("Tool")
-		local headOfThePlr = targetPlr.Character:FindFirstChild("Head")
-		local gunStates = require(justANormalGun.GunStates)
-		print(gunStates.Damage)
-		gunStates.Damage = damage
 		local remote_args = {
-			[1] = {
-				[1] = {
-					["RayObject"] = Ray.new(justANormalGun.Muzzle.Position, headOfThePlr.Position),
-					["Distance"] = (HRP.Position - targetPlr.Character.HumanoidRootPart.Position).Magnitude,
-					["Cframe"] = headOfThePlr.CFrame,
-					["Hit"] = headOfThePlr
-				},
-			},
+			[1] = {},
 			[2] = justANormalGun
 		}
-		TeamEvent:FireServer("Medium stone grey")
+		if damage ~= 1 then
+			for iter = 1, damage do
+				remote_args[1][iter] = createDmgArgs(justANormalGun, targetPlr)
+			end
+		else
+			remote_args[1][1] = createDmgArgs(justANormalGun, targetPlr)
+		end
 		ShootEvent:FireServer(table.unpack(remote_args))
 		ReloadEvent:FireServer(justANormalGun)
 		TeamEvent:FireServer("Bright orange")
@@ -201,7 +207,7 @@ local HeavyPunch = function()
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.825, 0, -.25)) * CFrame.Angles(-rad(15), rad(30), rad(120))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(20))
-	dmgPlayer(raycastedPlr, NerfHitDamages and RandomObj:NextInteger(25, 50) or 50)
+	dmgPlayer(raycastedPlr, 5)
 	wait(.65)
 	StandStates.AbilityState = "Idle"
 	setUpdateState(true)
@@ -215,7 +221,7 @@ local UnivBarrage = function()
 	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target) or nil
 	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
 		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
-		wait(3.675) -- just waits 'till its done yielding
+		wait(4) -- just waits 'till its done yielding
 	end
 	if StandStates.AbilityState == "UnivBarrage" then
 		StandStates.AbilityState = "Idle"
@@ -268,7 +274,7 @@ local TimeStop = function()
 	settings():GetService("NetworkSettings").IncomingReplicationLag = 0
 end
 
-local StandoJump = function()
+local StandJump = function()
 	StandStates.AbilityState = "StandoJump"
 	setUpdateState(false)
 	StandoCFrame = CFrame.new(Vector3.new(0, 2, 3.25))
@@ -316,13 +322,13 @@ _G.Connections[#_G.Connections + 1] = UIS.InputBegan:Connect(function(input)
 					setUpdateState(false)
 					Humanoid.WalkSpeed = 9.275
 					StandoCFrame = CFrame.new(Vector3.new(0, .25, -2.25))
-					createMessage("MUDA! (a bunch of barrages lol)")
+					createMessage("MUDA! (a bunch of barrages)")
 				elseif StandKeybinds[input.KeyCode] == "HeavyPunch" then
 					HeavyPunch()
 				elseif StandKeybinds[input.KeyCode] == "UnivBarrage" then
 					UnivBarrage()
 				elseif StandKeybinds[input.KeyCode] == "StandoJump" then
-					StandoJump()
+					StandJump()
 				elseif StandKeybinds[input.KeyCode] == "MenanceIdle" then
 					MenanceIdleAnim()
 				elseif StandKeybinds[input.KeyCode] == "TimeStop" and not StandStates.IsTimeStopMode then
@@ -397,7 +403,16 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			local rTrgPlrHRP = rTrgPlrChar:FindFirstChild("HumanoidRootPart") or rTrgPlrChar:FindFirstChild("Head")
 			local plrDistFromTrgPlr = floor((HRP.Position - rTrgPlrHRP.Position).magnitude)
 			raycastedPlr = (plrDistFromTrgPlr < 5 and rayTargetPlr or nil)
+		else
+			raycastedPlr = nil
 		end
+	end
+
+	if raycastedPlr then
+		local rTrgPlrChar = raycastedPlr.Character
+		local rTrgPlrHRP = rTrgPlrChar:FindFirstChild("HumanoidRootPart") or rTrgPlrChar:FindFirstChild("Head")
+		local plrDistFromTrgPlr = floor((HRP.Position - rTrgPlrHRP.Position).magnitude)
+		raycastedPlr = (plrDistFromTrgPlr < 5 and raycastedPlr or nil)
 	end
 end)
 
@@ -405,10 +420,8 @@ _G.Connections[#_G.Connections + 1] = RunService.RenderStepped:Connect(function(
 	if StandStates.AbilityState == "Barrage" or StandStates.AbilityState == "UnivBarrage" then
 		dmgPlayer(
 			StandStates.AbilityState == "Barrage" and raycastedPlr
-			or StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr,
-			NerfHitDamages and 3.25 or 5
+			or StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr
 		)
-		wait(.35)
 	end
 end)
 
