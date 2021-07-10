@@ -415,7 +415,7 @@ if UseBuiltinNetless then
 		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
 		settings().Physics.ThrottleAdjustTime = 0 / 1 / 0
 
-		for _, object in pairs(HatParts) do
+		for _, object in next, HatParts do
 			if object and object:FindFirstChild("Handle") then
 				object.Handle.CanCollide = false
 				object.Handle.Massless = true
