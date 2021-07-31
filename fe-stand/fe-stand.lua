@@ -433,16 +433,25 @@ _G.Connections[#_G.Connections + 1] = RunService.Heartbeat:Connect(function()
 end)
 
 if UseBuiltinNetless then
-	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
-		settings().Physics.AllowSleep = false
-		settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
-		settings().Physics.ThrottleAdjustTime = 0 / 0
+	settings().Physics.AllowSleep = false
+	settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Skip8
+	settings().Physics.ThrottleAdjustTime = 0 / 0
 
+	for _, object in pairs(HatParts) do
+		if object and object:FindFirstChild("Handle") then
+			local BodyVel, BodyAngVel = Instance.new("BodyVelocity"), Instance.new("BodyAngularVelocity")
+			BodyVel.MaxForce, BodyVel.Velocity = Vector3.new(0, -35, 25.05), Vector3.new(0, -35, 25.05)
+			BodyAngVel.MaxTorque, BodyAngVel.AngularVelocity = Vector3.new(), Vector3.new()
+			BodyVel.Parent, BodyAngVel.Parent = object.Handle, object.Handle
+		end
+	end
+
+	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		for _, object in pairs(HatParts) do
 			if object and object:FindFirstChild("Handle") then
 				object.Handle.CanCollide = false
 				object.Handle.Massless = true
-				object.Handle.Velocity = Vector3.new(-25.05, -35.05, -25.05)
+				object.Handle.Velocity = Vector3.new(0, -35, 25.05)
 				object.Handle.RotVelocity = Vector3.new()
 			end
 		end
