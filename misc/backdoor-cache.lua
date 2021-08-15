@@ -1,7 +1,17 @@
+--[[
+	cache example:
+	[placeid here (placeid should be only a integer)] = {
+		["Path"] = "remote.path.here", -- don't do remote.path["here"] or the path parser will not work
+		["Args"] = {"arg1here", "source"}, -- source shouldn't be deleted
+		["SourceFunc"] = function(source) -- only add this when the remote has custom encryption thingy
+			return source
+		end
+	}
+--]]
 local Player = game:GetService("Players").LocalPlayer
 return {
 	[5033592164] = {
-		["Path"] = game.PlaceId == 5033592164 and game.JointsService:GetChildren()[1]:GetFullName(),
+		["Path"] = game.PlaceId == 5033592164 and game:GetService("ReplicatedStorage"):GetChildren()[1]:GetFullName(),
 		["Args"] = {"1234567890", "source"}
 	},
 	[6879465970] = {
