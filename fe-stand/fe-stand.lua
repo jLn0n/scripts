@@ -190,13 +190,13 @@ local HeavyPunch = function()
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.Angles(-rad(25), 0, rad(15))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, -rad(30))
-	wait(.375)
+	task.wait(.375)
 	Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(15), 0, rad(12.5))
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.Angles(-rad(3.5), 0, 0)
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(.825, 0, -.25)) * CFrame.Angles(-rad(15), rad(30), rad(120))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, rad(20))
 	dmgPlayer(raycastedPlr, RandomObj:NextInteger(30, 50))
-	wait(.65)
+	task.wait(.65)
 	StandStates.AbilityState = "Idle"
 	setUpdateState(true)
 	StandoCFrame = StarterStandoCFrame
@@ -209,7 +209,7 @@ local UnivBarrage = function()
 	univBrgeTargetPlr = getPlrFromBasePart(Mouse.Target) or nil
 	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
 		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
-		wait(4) -- just waits 'till its done yielding
+		task.wait(4) -- just waits 'till its done yielding
 	end
 	if StandStates.AbilityState == "UnivBarrage" then
 		StandStates.AbilityState = "Idle"
@@ -229,7 +229,7 @@ local TimeStop = function()
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .25)) * CFrame.Angles(rad(90), 0, -rad(45))
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .25)) * CFrame.Angles(rad(90), 0, rad(45))
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(7.25), 0, 0)
-	wait(.55)
+	task.wait(.55)
 	Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(-rad(15), 0, 0)
 	Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(0, .5, .25)) * CFrame.Angles(rad(90), 0, -rad(140))
 	Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(0, .5, .25)) * CFrame.Angles(rad(90), 0, rad(140))
@@ -237,9 +237,9 @@ local TimeStop = function()
 	for _ = 1, 10 do
 		ColorCE.Saturation -= .1
 		ColorCE.Contrast += .1
-		wait(.025)
+		task.wait(.025)
 	end
-	wait(.15)
+	task.wait(.15)
 	Humanoid.WalkSpeed = 25
 	StandStates.IsTimeStopMode = true
 	anchorPlrs(true)
@@ -248,11 +248,11 @@ local TimeStop = function()
 	Humanoid:ChangeState("Freefall")
 	StandoCFrame = StarterStandoCFrame
 	StandStates.AbilityState = "Idle"
-	wait(8)
+	task.wait(8)
 	for _ = 1, 10 do
 		ColorCE.Saturation += .1
 		ColorCE.Contrast -= .1
-		wait(.025)
+		task.wait(.025)
 	end
 	Humanoid.WalkSpeed = 16
 	ColorCE.Enabled = false
@@ -274,7 +274,7 @@ local StandJump = function()
 	Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(rad(25), 0, 0)
 	HRP.Velocity = Vector3.new(0, 150, 0) + (HRP.CFrame.LookVector * 115)
 	for _ = 1, 5 do Humanoid:ChangeState("Jumping") end
-	wait(.1)
+	task.wait(.1)
 	Humanoid.FreeFalling:Wait()
 	StandStates.AbilityState = "Idle"
 	StandoCFrame = StarterStandoCFrame
@@ -288,7 +288,7 @@ local MenanceIdleAnim = function()
 	setUpdateState(false)
 	HRP.Anchored = true
 	StandoCFrame = CFrame.new(Vector3.new(0, 0, 1.25)) * CFrame.Angles(0, rad(180), 0)
-	wait(.125)
+	task.wait(.125)
 	setUpdateState(true)
 end
 
