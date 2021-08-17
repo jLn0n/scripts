@@ -13,7 +13,7 @@ local getTextSize = function(object)
 		object.Text,
 		object.TextSize,
 		object.Font,
-		Vector2.new(object.AbsoluteSize.X, 10e10)
+		Vector2.new(object.AbsoluteSize.X, 1e5)
 	)
 end
 

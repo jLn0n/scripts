@@ -3,7 +3,7 @@
 	Maybe a faster implementation of game:GetObjects
 
 	How to use:
-		local getobjects = loadstring(game:HttpGet("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/libraries/getobjects.lua"))()
+		local getobjects = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/libraries/getobjects.lua", true))()
 		getobjects("rbxassetid://1234567890")[1]
 --]]
 -- // SERVICES
