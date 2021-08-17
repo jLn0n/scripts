@@ -434,7 +434,7 @@ end)
 
 if UseBuiltinNetless then
 	settings().Physics.AllowSleep = false
-	settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Skip8
+	settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
 	settings().Physics.ThrottleAdjustTime = 0 / 0
 
 	for _, object in pairs(HatParts) do
