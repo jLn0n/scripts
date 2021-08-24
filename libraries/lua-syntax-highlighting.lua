@@ -8,12 +8,12 @@ local synHLUI_Template = getObjects("rbxassetid://6969756999")[1]
 -- // VARIABLES
 local sformat, smatch, sgsub, srep = string.format, string.match, string.gsub, string.rep
 -- // MAIN
-local getTextSize = function(object, abSize)
+local getTextSize = function(object)
 	return TextService:GetTextSize(
 		object.Text,
 		object.TextSize,
 		object.Font,
-		abSize
+		Vector3.new(object.AbsoluteSize.X, 1e5)
 	)
 end
 
@@ -43,12 +43,12 @@ local updateTextSource = function(synHL_UI, textSource)
 		TextLines.LineText.Text = TextLines.LineText.Text .. tostring(lineVal) .. "\n"
 	end
 
-	TextSourceSize, TextLineSize = getTextSize(TextSourceHolder, TextSource.AbsoluteSize), getTextSize(TextLines.LineText, TextLines.AbsoluteSize)
+	TextSourceSize, TextLineSize = getTextSize(TextSourceHolder), getTextSize(TextLines.LineText)
 	TextLines.Size = UDim2.new(0, TextLineSize.X + 10, 1, 0)
-	TextLines.CanvasSize = UDim2.new(0, 0, 0, TextLineSize.Y + TextLines.ScrollBarThickness + synHL_UI.AbsoluteSize.Y)
-	TextSource.Position = UDim2.new(0, TextLines.Size.X.Offset, 0, 0)
-	TextSource.Size = UDim2.new(0, synHL_UI.AbsoluteSize.X - TextLines.Size.X.Offset, 0, synHL_UI.AbsoluteSize.Y)
-	TextSource.CanvasSize = UDim2.new(0, TextSourceSize.X + (TextSource.ScrollBarThickness + TextLines.Size.X.Offset + 2), 0, TextSourceSize.Y + TextSource.ScrollBarThickness + synHL_UI.AbsoluteSize.Y)
+	TextLines.CanvasSize = UDim2.new(0, 0, 0, TextLineSize.Y + TextLines.ScrollBarThickness + TextLines.AbsoluteSize.Y)
+	TextSource.Position = UDim2.new(0, TextLines.AbsoluteSize.X, 0, 0)
+	TextSource.Size = UDim2.new(1, -TextLines.AbsoluteSize.X, 1, 0)
+	TextSource.CanvasSize = UDim2.new(0, (TextSourceSize.X + TextSource.ScrollBarThickness + synHL_UI.AbsoluteSize.X + TextLines.AbsoluteSize.X), 0, (TextSourceSize.Y + TextSource.ScrollBarThickness + synHL_UI.AbsoluteSize.Y))
 end
 
 local setProperty = function(object, propName, propValue)
