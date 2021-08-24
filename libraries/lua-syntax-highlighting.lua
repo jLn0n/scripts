@@ -1,19 +1,19 @@
 -- // SERVICES
 local TextService = game:GetService("TextService")
+-- // LIBRARIES
+local getObjects = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/libraries/getobjects.lua", true))()
+local Lexer = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/libraries/boatbomber-lexer.lua", true))()
 -- // OBJECTS
-local synHLUI_Template = game:GetObjects("rbxassetid://6969756999")[1]
--- // MODULES
-local Lexer = loadstring(game:HttpGet("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/libraries/boatbomber-lexer.lua", true))()
+local synHLUI_Template = getObjects("rbxassetid://6969756999")[1]
 -- // VARIABLES
 local sformat, smatch, sgsub, srep = string.format, string.match, string.gsub, string.rep
-local Lexer_scan = Lexer.scan
 -- // MAIN
-local getTextSize = function(object)
+local getTextSize = function(object, abSize)
 	return TextService:GetTextSize(
 		object.Text,
 		object.TextSize,
 		object.Font,
-		Vector2.new(object.AbsoluteSize.X, 1e5)
+		abSize
 	)
 end
 
@@ -28,7 +28,7 @@ local updateTextSource = function(synHL_UI, textSource)
 	TextSourceHolder.Text = textSource
 	TextLines.LineText.Text = ""
 	for _, lexObj in ipairs(TextSourceHolder:GetChildren()) do lexObj.Text = "" end
-	for tok, str in Lexer_scan(textSource) do
+	for tok, str in Lexer.scan(textSource) do
 		for _, lexObj in ipairs(TextSourceHolder:GetChildren()) do
 			if lexObj.Name == tok then
 				lexObj.Text = lexObj.Text .. str
@@ -43,7 +43,7 @@ local updateTextSource = function(synHL_UI, textSource)
 		TextLines.LineText.Text = TextLines.LineText.Text .. tostring(lineVal) .. "\n"
 	end
 
-	TextSourceSize, TextLineSize = getTextSize(TextSourceHolder), getTextSize(TextLines.LineText)
+	TextSourceSize, TextLineSize = getTextSize(TextSourceHolder, TextSource.AbsoluteSize), getTextSize(TextLines.LineText, TextLines.AbsoluteSize)
 	TextLines.Size = UDim2.new(0, TextLineSize.X + 10, 1, 0)
 	TextLines.CanvasSize = UDim2.new(0, 0, 0, TextLineSize.Y + TextLines.ScrollBarThickness + synHL_UI.AbsoluteSize.Y)
 	TextSource.Position = UDim2.new(0, TextLines.Size.X.Offset, 0, 0)
@@ -73,7 +73,7 @@ end
 local M = {} -- why use metatables lol
 
 function M.new(properties)
-	assert(type(properties) == "table", "the argument #1 should be a table")
+	assert(typeof(properties) == "table", "argument #1 should be a table")
 	local synHL_UI = synHLUI_Template:Clone()
 	local TextLines = synHL_UI.TextLines
 	local TextSource = synHL_UI.TextSource
