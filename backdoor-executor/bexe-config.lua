@@ -15,6 +15,8 @@
 	}
 	the script on the top will run when backdoor-executor.lua is attached
 	it should be always an array or it will not run
+
+	note that this config will autoupdate every config changes so u should always backup this config incase of data loss
 --]==]
 return {
 	["cachedPlaces"] = {
