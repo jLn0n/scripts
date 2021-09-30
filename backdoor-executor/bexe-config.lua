@@ -29,11 +29,6 @@ return {
 	},
 	["autoExec"] = {
 		[[print("backdoor-executor.lua is epic!")]],
-		[[
-			for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
-				plr:Destroy()
-			end
-		]]
 	},
 	["configVer"] = 2
 }
