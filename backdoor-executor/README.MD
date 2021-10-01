@@ -5,7 +5,7 @@ might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe).
 ## Info
 This script is for [Roblox](https://roblox.com) scanning backdoors and executing them within a gui.
 ### Requirements
-- A non skiddy brain
+- A non skiddy brain that needs help for dumb reason
 - Decent executor that supports filesystem functions (for config)
 ### Script
 Just use the script below and execute it.
