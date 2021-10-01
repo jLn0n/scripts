@@ -15,7 +15,7 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 ### Config Help
 - My config has been gone back to original
 > The config will reset to the original config if the configVer is lower than the original config
-- Adding Cache Example
+- Adding cache example
 ```lua
 [placeid] = {
 	["Path"] = "remote.path.here", -- this is the path of the remote, don't do remote.path["here"] or it will not work
@@ -26,7 +26,7 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 }
 ```
 > if the cache didn't work backdoor-executor.lua will warn u that the cache is outdated
-- Using AutoExecute
+- Using autoexecute
 > add a script inside the autoExecute table, you can put many code as long as you want inside the table
 ```lua
 ["autoExec"] = {
