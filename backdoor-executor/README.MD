@@ -13,8 +13,8 @@ Just use the script below and execute it.
 loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/backdoor-executor.lua"))()
 ```
 ### Config Help
-- My config has been gone back to original
-> The config will reset to the original config if the configVer is lower than the original config
+- My config has reset back to original
+> The config will reset to the original config if the configVer is lower than the original config so you should always backup your config to prevent config resets
 - Adding cache example
 ```lua
 [placeid] = {
