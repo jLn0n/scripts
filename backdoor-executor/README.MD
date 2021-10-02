@@ -3,18 +3,23 @@
 might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe).
 
 ## Info
-This script is for [Roblox](https://roblox.com) scanning backdoors and executing them within a gui.
-### Requirements
-- A non skiddy brain that needs help for dumb reason
-- Decent executor that supports filesystem functions (for config)
+This script is for [Roblox](https://roblox.com) scanning backdoors and executing serversided scripts them within a gui.
 ### Script
-Just use the script below and execute it.
+Just copy the script below and execute it through your executor.
 ```lua
 loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/backdoor-executor.lua"))()
 ```
+### Requirements
+- A non skiddy brain that needs help for dumb reason
+- Decent executor that supports filesystem functions (for config)
+### Authors
+**jLn0n**
+- Discord: jLn0n#1464(474555624219344906)
+- Github: [@jLn0n](https://github.com/jLn0n)
+- Guilded: [jLn0n](https://www.guilded.gg/profile/1Ar9EYwm)
 ### Config Help
 - My config has reset back to original
-> The config will reset to the original config if the configVer is lower than the original config so you should always backup your config to prevent config resets
+> The config will reset to the original config if the config version(configVer in [bexe-config.lua](https://github.com/jLn0n/created-scripts-public/blob/main/backdoor-executor/bexe-config.lua)) is lower than the original config so you should always backup your config to prevent config resets
 - Adding cache example
 ```lua
 [placeid] = {
@@ -27,9 +32,10 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 ```
 > if the cache didn't work backdoor-executor.lua will warn u that the cache is outdated
 - Using autoexecute
-> add a script inside the autoExecute table, you can put many code as long as you want inside the table
+> add a script inside the autoExecute table, you can put many code as long as you want inside the table, example:
 ```lua
-["autoExec"] = {
+-- it should be a array and don't add a nil or it will not work
+{
 	[[print("jLn0n is epic!")]],
 	[[warn("backdoor-executor.lua needs a new name!")]]
 },
