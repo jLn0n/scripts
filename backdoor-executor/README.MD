@@ -1,6 +1,6 @@
 # backdoor-executor.lua
 (pls help me get a new name for this script)
-might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe).
+might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe) in terms of scanning.
 
 ## Info
 This script is for [Roblox](https://roblox.com) scanning backdoors and executing serversided scripts them within a gui.
