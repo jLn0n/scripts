@@ -13,5 +13,9 @@ return {
 	["autoExec"] = {
 		[[print("backdoor-executor.lua is epic!")]],
 	},
-	["configVer"] = 2 -- don't touch this!
+	["blacklistSettings"] = {
+		["eventNames"] = {},
+		["eventParentNames"] = {}
+	},
+	["configVer"] = 3 -- don't touch this!
 }
