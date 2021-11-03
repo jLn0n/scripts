@@ -28,7 +28,8 @@
 		money grab prison life copy: https://www.roblox.com/games/6114360009 or https://www.roblox.com/games/5087077830
 
 	TODO's: (* - unfinished | x - finished)
-		* Custom player animations (replaces roblox default animation)
+		x Make dmgPlayer function damaging customizable
+		* Custom player animations
 		* Fling support
 --]]
 -- // SETTINGS
@@ -38,6 +39,7 @@ local RemoveHeadMesh = false -- removes the mesh of the desired head when enable
 local StarterStandoCFrame = CFrame.new(Vector3.new(-1.75, 1.65, 2.5)) -- the starting position of the stand
 local EnableChats = false -- enables character chatting when a action was enabled / changed
 local UseBuiltinNetless = true -- enables builtin netless when enabled, if u want to use ur own netless just disable this, execute ur netless script first and this script
+local NetlessVelocity = Vector3.new(-35, 25.05, 0)
 -- // SERVICES
 local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
@@ -209,10 +211,10 @@ local UnivBarrage = function()
 	if univBrgeTargetPlr and univBrgeTargetPlr.Character:FindFirstChild("HumanoidRootPart") then
 		univBrgeTPlrHRP = univBrgeTargetPlr.Character.HumanoidRootPart
 		task.wait(4) -- just waits 'till its done yielding
-		if StandStates.AbilityState == "UnivBarrage" then -- just to prevent a bug
-			StandStates.AbilityState = "Idle"
-			setUpdateState(true)
-		end
+	end
+	if StandStates.AbilityState == "UnivBarrage" then
+		StandStates.AbilityState = "Idle"
+		setUpdateState(true)
 	end
 end
 
@@ -370,7 +372,7 @@ _G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 			Motors.Neck.CFrame = Motors.Neck.Cache * CFrame.Angles(rad(7.5) + -cos(anim) * .025, 0, 0)
 			Motors.LS.CFrame = Motors.LS.Cache * CFrame.new(Vector3.new(-1 - sin(anim) * 1.5, .5, .325 + -sin(anim) * .25)) * CFrame.Angles(rad(90), 0, -rad(77.5))
 			Motors.RS.CFrame = Motors.RS.Cache * CFrame.new(Vector3.new(1 - sin(anim) * 1.5, .5, .325 + sin(anim) * .25)) * CFrame.Angles(rad(90), 0, rad(77.5))
-			Motors.RJoint.CFrame = Motors.RJoint.Cache
+			Motors.RJoint.CFrame = Motors.RJoint.Cache * CFrame.Angles(0, 0, sin(cos(anim)) * .075)
 			if StandStates.AbilityState == "UnivBarrage" and univBrgeTargetPlr and univBrgeTargetPlr.Character.Humanoid.Health == 0 then
 				univBrgeTargetPlr, univBrgeTPlrHRP = nil, nil
 				StandStates.AbilityState = "Idle"
@@ -433,13 +435,13 @@ end)
 
 if UseBuiltinNetless then
 	settings().Physics.AllowSleep = false
-	settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto
+	settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
 	settings().Physics.ThrottleAdjustTime = 0 / 0
 
 	for _, object in pairs(HatParts) do
 		if object and object:FindFirstChild("Handle") then
 			local BodyVel, BodyAngVel = Instance.new("BodyVelocity"), Instance.new("BodyAngularVelocity")
-			BodyVel.MaxForce, BodyVel.Velocity = Vector3.new(0, -35, 25.05), Vector3.new(0, -35, 25.05)
+			BodyVel.MaxForce, BodyVel.Velocity = NetlessVelocity, NetlessVelocity
 			BodyAngVel.MaxTorque, BodyAngVel.AngularVelocity = Vector3.new(), Vector3.new()
 			BodyVel.Parent, BodyAngVel.Parent = object.Handle, object.Handle
 		end
@@ -448,9 +450,8 @@ if UseBuiltinNetless then
 	_G.Connections[#_G.Connections + 1] = RunService.Stepped:Connect(function()
 		for _, object in pairs(HatParts) do
 			if object and object:FindFirstChild("Handle") then
-				object.Handle.CanCollide, object.Handle.Massless = false
-				object.Handle.Velocity = Vector3.new(0, -35, 25.05)
-				object.Handle.RotVelocity = Vector3.new()
+				object.Handle.Massless, object.Handle.CanCollide = true, false
+				object.Handle.Velocity, object.Handle.RotVelocity = NetlessVelocity, Vector3.new()
 			end
 		end
 	end)
