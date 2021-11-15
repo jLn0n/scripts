@@ -3,6 +3,6 @@
 
 ## TODO:
 
-[ ] Character Animations
-[ ] Cooldown UI
-[ ] Overhaul Stand Animations
+- [] Character Animations
+- [] Cooldown UI
+- [] Overhaul Stand Animations
