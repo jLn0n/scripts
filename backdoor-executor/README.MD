@@ -1,6 +1,6 @@
 # backdoor-executor.lua
 ###
-* Created on: July 22, 2021 GMT+8 (based on the commit date in the jLn0n/scripts-private repo)
+* Created on: July 22, 2021 GMT+8 (based on the commit date in my jLn0n/scripts-private repo)
 ###
 (pls help me get a new name for this script)
 might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe) in terms of scanning.
