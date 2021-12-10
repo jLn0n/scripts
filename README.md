@@ -1,2 +1,2 @@
-# created-scripts-public
+# scripts
 no stel code pls
