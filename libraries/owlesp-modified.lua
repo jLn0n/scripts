@@ -3,11 +3,9 @@ local OwlESP = {}
 local localPlayer = game:GetService("Players").LocalPlayer
 local currentCamera = workspace.CurrentCamera
 local worldToViewportPoint = currentCamera.WorldToViewportPoint
-local setmetatable = setmetatable
 local newDrawing = Drawing.new
 local newVector2 = Vector2.new
 local newVector3 = Vector3.new
-local remove = table.remove
 
 local headOffset = newVector3(0, 0.5, 0)
 local legOffset = newVector3(0, 3, 0)
@@ -20,7 +18,7 @@ function OwlESP.new(data)
 		espBox = nil,
 		name = nil,
 		tracer = nil,
-		espColor = data.espColor or fromRGB(255, 255, 255),
+		espColor = data.espColor or Color3.fromRGB(255, 255, 255),
 		teamCheck = data.teamCheck or false
 	}, {__index = OwlESP})
 
@@ -37,7 +35,7 @@ function OwlESP.new(data)
 	local rootPos, rootVis = worldToViewportPoint(currentCamera, rootPart.Position)
 	local headPos = worldToViewportPoint(currentCamera, head.Position + headOffset)
 	local legPos = worldToViewportPoint(currentCamera, rootPart.Position - legOffset)
-	local visible = (self.teamCheck and plr.TeamColor ~= localPlayer.TeamColor) or (not self.teamCheck)
+	local visible = (self.teamCheck and (localPlayer.Neutral == plr.Neutral or plr.TeamColor ~= localPlayer.TeamColor)) or false
 
 	local espBox = newDrawing("Square")
 	espBox.Color = self.espColor
