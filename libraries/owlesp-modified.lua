@@ -68,7 +68,7 @@ function OwlESP:update()
 
 	if plr and char and humanoid then
 		local espBox, tracer, name = self.espBox[1], self.tracer[1], self.name[1]
-		local espBoxVisible, healthBarVisible, tracerVisible, text, espColor = self.espBox[2], self.healthBar[2], self.tracer[2], self.name[2], self.espColor
+		local espBoxVisible, tracerVisible, text, espColor = self.espBox[2], self.tracer[2], self.name[2], self.espColor
 		local rootPart, head = char:FindFirstChild("HumanoidRootPart"), char:FindFirstChild("Head")
 
 		if rootPart and head then
