@@ -114,7 +114,7 @@ function OwlESP:update()
 
 				espBox.Visible = espBoxVisible and visible
 				tracer.Visible = tracerVisible and visible
-				name.Visible = visible
+				name.Visible = espBoxVisible and visible
 			else
 				espBox.Visible = false
 				tracer.Visible = false
