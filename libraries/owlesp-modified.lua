@@ -22,20 +22,9 @@ function OwlESP.new(data)
 		teamCheck = data.teamCheck or false
 	}, {__index = OwlESP})
 
-	local plr = data.plr
-	local char = self.char
 	local espBoxVisible = data.espBoxVisible
 	local tracerVisible = data.tracerVisible
 	local text = data.text
-
-	if not char then return end
-
-	local rootPart = char.HumanoidRootPart
-	local head = char.Head
-	local rootPos, rootVis = worldToViewportPoint(currentCamera, rootPart.Position)
-	local headPos = worldToViewportPoint(currentCamera, head.Position + headOffset)
-	local legPos = worldToViewportPoint(currentCamera, rootPart.Position - legOffset)
-	local visible = (self.teamCheck and (plr.Neutral == true or plr.TeamColor ~= localPlayer.TeamColor)) or (not self.teamCheck)
 
 	local espBox = newDrawing("Square")
 	espBox.Color = self.espColor
@@ -54,16 +43,9 @@ function OwlESP.new(data)
 	name.Center = true
 	name.Outline = true
 
-	if rootVis then
-		espBox.Size = newVector2(2350 / rootPos.Z, headPos.Y - legPos.Y)
-		espBox.Position = newVector2(rootPos.X - espBox.Size.X / 2, rootPos.Y - espBox.Size.Y / 2)
-		tracer.To = newVector2(rootPos.X, rootPos.Y - espBox.Size.Y / 2)
-		name.Position = newVector2(rootPos.X, (rootPos.Y + espBox.Size.Y / 2) - 25)
-
-		espBox.Visible = espBoxVisible and visible
-		tracer.Visible = tracerVisible and visible
-		name.Visible = espBoxVisible and visible
-	end
+	espBox.Visible = false
+	tracer.Visible = false
+	name.Visible = false
 
 	self.espBox = {espBox, espBoxVisible}
 	self.tracer = {tracer, tracerVisible}
@@ -72,27 +54,21 @@ function OwlESP.new(data)
 	return self
 end
 
-function OwlESP:setESPBox(visible)
-	self.espBox[2] = visible
-end
-
-function OwlESP:setTracer(visible)
-	self.tracer[2] = visible
-end
-
-function OwlESP:setText(text)
-	self.name[2] = text
-end
-
-function OwlESP:setCharacter(character)
-	self.char = character
+function OwlESP:setConfig(data)
+	self.espBox[2] = data.espBoxVisible or self.espBox[2]
+	self.tracer[2] = data.tracerVisible or self.tracer[2]
+	self.name[2] = data.text or self.name[2]
+	self.char = data.char
+	self.teamCheck = data.teamCheck or self.teamCheck
 end
 
 function OwlESP:update()
-	local plr, char, espBox, tracer, name = self.plr, self.char, self.espBox[1], self.tracer[1], self.name[1]
+	local plr, char = self.plr, self.char
+	local humanoid = char and char:FindFirstChildWhichIsA("Humanoid") or nil
 
-	if plr and char then
-		local espBoxVisible, tracerVisible, text, espColor = self.espBox[2], self.tracer[2], self.name[2], self.espColor
+	if plr and char and humanoid then
+		local espBox, tracer, name = self.espBox[1], self.tracer[1], self.name[1]
+		local espBoxVisible, healthBarVisible, tracerVisible, text, espColor = self.espBox[2], self.healthBar[2], self.tracer[2], self.name[2], self.espColor
 		local rootPart, head = char:FindFirstChild("HumanoidRootPart"), char:FindFirstChild("Head")
 
 		if rootPart and head then
@@ -102,8 +78,8 @@ function OwlESP:update()
 			local visible = (self.teamCheck and (plr.Neutral == true or plr.TeamColor ~= localPlayer.TeamColor)) or (not self.teamCheck)
 
 			if rootVis then
-				espBox.Size = newVector2(2350 / rootPos.Z, headPos.Y - legPos.Y)
 				local espBoxSize = espBox.Size
+				espBox.Size = newVector2(2350 / rootPos.Z, headPos.Y - legPos.Y)
 				espBox.Position = newVector2(rootPos.X - espBoxSize.X / 2, rootPos.Y - espBoxSize.Y / 2)
 				espBox.Color = espColor
 				tracer.To = newVector2(rootPos.X, rootPos.Y - espBoxSize.Y / 2)
