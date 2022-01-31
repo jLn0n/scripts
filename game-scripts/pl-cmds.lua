@@ -1,8 +1,3 @@
---[[
-	pl-cmds.lua, v0.1.4 (prev versions are private)
-	open-source now because skid is steal me code
-	btw this is how f***ing i write code:
---]]
 -- services
 local players = game:GetService("Players")
 local repStorage = game:GetService("ReplicatedStorage")
@@ -14,10 +9,10 @@ local character = player.Character
 local humanoid = character:FindFirstChildWhichIsA("Humanoid")
 local rootPart = character:FindFirstChild("HumanoidRootPart")
 -- events
-local shoot, reload, punch, itemGive, teamChange, loadChar =
+local punch, shoot, reload, itemGive, teamChange, loadChar =
+	repStorage:FindFirstChild("meleeEvent"),
 	repStorage:FindFirstChild("ShootEvent"),
 	repStorage:FindFirstChild("ReloadEvent"),
-	repStorage:FindFirstChild("meleeEvent"),
 	workspace.Remote:FindFirstChild("ItemHandler"),
 	workspace.Remote:FindFirstChild("TeamEvent"),
 	workspace.Remote:FindFirstChild("loadchar")
@@ -35,6 +30,7 @@ local config = {
 	["killAura"] = {
 		["enabled"] = false,
 		["range"] = 25,
+		["killMode"] = "punch",
 	},
 	["prefix"] = ";",
 	["walkSpeed"] = 16,
@@ -133,7 +129,7 @@ local function invisSelf(bypassToggle)
 		character:PivotTo(oldPos)
 	end
 end
-local function makeShootPackets(shootPackets, targetPart) -- what a magic has gotten into this piece of code lol
+local function makeShootPackets(shootPackets, targetPart)
 	for _ = 1, 10 do
 		table.insert(shootPackets, {
 			["RayObject"] = Ray.new(Vector3.zero, Vector3.zero),
@@ -142,7 +138,7 @@ local function makeShootPackets(shootPackets, targetPart) -- what a magic has go
 			["Hit"] = targetPart
 		})
 	end
-	return shootPackets -- if u dont know the context that i am talking about then comment out this line and kill command will not work anymore
+	return shootPackets
 end
 local function killPlr(arg1)
 	local gunObj = player.Backpack:FindFirstChild("M9")
@@ -154,9 +150,8 @@ local function killPlr(arg1)
 	if typeof(arg1) == "table" then
 		for _, plr in ipairs(arg1) do
 			local targetPart = plr.Character and plr.Character:FindFirstChild("Head") or nil
-			if targetPart and not config.killConf.killBlacklist[plr.Name] then
-				makeShootPackets(shootPackets, targetPart)
-			end
+			if not (targetPart and not config.killConf.killBlacklist[plr.Name]) then continue end
+			makeShootPackets(shootPackets, targetPart)
 		end
 	else
 		local targetPart = arg1.Character and arg1.Character:FindFirstChild("Head") or nil
@@ -168,12 +163,12 @@ local function killPlr(arg1)
 		teamChange:FireServer("Medium stone grey"); isKilling = false
 		task.defer((not config.utils.autoCriminal and teamChange.FireServer or autoCrim), teamChange, "Bright orange")
 	end
-	shoot:FireServer(shootPackets, gunObj);reload:FireServer(gunObj)
+	shoot:FireServer(shootPackets, gunObj); reload:FireServer(gunObj)
 end
 local function countTable(tableArg)
 	local count = 0
 	for _ in pairs(tableArg) do
-		count = count + 1
+		count += 1
 	end
 	return count
 end
@@ -236,11 +231,11 @@ local function cmdMsgParse(_player, message)
 	if prefixMatch then
 		message = string.gsub(message, prefixMatch, "", 1)
 		local args = string.split(message, " ")
-		local cmdName = getCommandParentName(args[1])
-		local cmdData = commands[cmdName]
+		local cmdName = getCommandParentName(args[1]) or args[1]
 		table.remove(args, 1)
-		if cmdData then
-			if table.getn(args) == 0 and cmdData.usage then
+		if commands[cmdName] then
+			local cmdData = commands[cmdName]
+			if (#args == 0 and cmdData.usage) then
 				msgNotify(string.format(msgOutputs.commandsOutput.usageNotify, config.prefix .. cmdName .. " " .. cmdData.usage))
 			else
 				cmdData.callback(_player, args)
@@ -353,7 +348,7 @@ commands = {
 	["kill-aura"] = {
 		["aliases"] = {"kaura"},
 		["desc"] = "kills player(s) near your character.",
-		["usage"] = "<[toggle | range]: string> <number (if range)>",
+		["usage"] = "<[toggle | range | killmode]: string> <range: number (if range) or [punch | gun(experimental)]: string (if killmode)>",
 		["callback"] = function(_, args)
 			if args[1] == "range" then
 				local _, result = pcall(tonumber, args[2])
@@ -361,7 +356,10 @@ commands = {
 				msgNotify((not result and string.format(msgOutputs.argumentError, "1", "number") or string.format(msgOutputs.changedNotify, "range", config.killAura.range)))
 			elseif args[1] == "toggle" then
 				config.killAura.enabled = not config.killAura.enabled
-				msgNotify(string.format(msgOutputs.autoToggleNotify, "kill aura", (config.killAura.enabled and "enabled" or "disabled")))
+				msgNotify(string.format(msgOutputs.autoToggleNotify, "kill-aura", (config.killAura.enabled and "enabled" or "disabled")))
+			elseif args[1] == "killmode" or args[1] == "kmode" then
+				config.killAura.killMode = args[2] and ((args[2] == "gun" and "gun") or ((args[2] == "default" or args[2] == "punch") and "punch")) or config.killAura.killMode
+				msgNotify(string.format(msgOutputs.changedNotify, "kill-aura kill mode", config.killAura.killMode))
 			end
 		end
 	},
@@ -448,32 +446,45 @@ player.CharacterAdded:Connect(function(spawnedCharacter)
 		if diedConnection then diedConnection:Disconnect() end
 		diedConnection = humanoid.Died:Connect(respawnSelf)
 	end
-	task.defer(invisSelf); task.defer(autoCrim)
+	task.defer(invisSelf);task.defer(autoCrim)
 end)
 runService.Heartbeat:Connect(function()
 	if humanoid then
 		humanoid.WalkSpeed, humanoid.JumpPower = config.walkSpeed, config.jumpPower
 	end
-	if config.killAura.enabled and rootPart then
-		for _, plr in ipairs(players:GetPlayers()) do
-			if plr ~= player then
-				local plrChar = plr.Character
-				local _rootPart, _humanoid = plrChar and character:FindFirstChild("HumanoidRootPart") or nil, plrChar and character:FindFirstChildWhichIsA("Humanoid")
-				if not config.killConf.killBlacklist[plr.Name] and ((_humanoid and _humanoid.Health ~= 0) and (_rootPart and player:DistanceFromCharacter(_rootPart.Position) < config.killAura.range)) then
+end)
+task.spawn(function()
+	while true do task.wait()
+		if config.killAura.enabled then
+			local killingPlayers = table.create(0)
+			for _, plr in ipairs(players:GetPlayers()) do
+				if plr ~= player then
+					local plrChar = plr.Character
+					local _rootPart, _humanoid = plrChar and plrChar:FindFirstChild("HumanoidRootPart") or nil, plrChar and plrChar:FindFirstChildWhichIsA("Humanoid") or nil
+					if not config.killConf.killBlacklist[plr.Name] and ((plrChar and not plrChar:FindFirstChildWhichIsA("ForceField")) and (_humanoid and _humanoid.Health ~= 0) and (_rootPart and player:DistanceFromCharacter(_rootPart.Position) < config.killAura.range)) then
+						table.insert(killingPlayers, plr)
+					end
+				end
+			end
+			if config.killAura.killMode == "gun" and #killingPlayers ~= 0 then
+				killPlr(killingPlayers)
+				task.wait(.35)
+			elseif config.killAura.killMode == "punch" then
+				for _, plr in ipairs(killingPlayers) do
 					for _ = 1, 25 do punch:FireServer(plr) end
 				end
 			end
 		end
 	end
 end)
-oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-	local message = ...
+oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
+	local self, message = ...
 	local namecallMethod = getnamecallmethod()
 
 	if (not checkcaller() and (self.ClassName == "RemoteEvent" and self.Name == "SayMessageRequest") and namecallMethod == "FireServer") and msgPrefixMatch(message) then
 		task.spawn(cmdMsgParse, player, message)
 		return
 	end
-	return oldNamecall(self, ...)
+	return oldNamecall(...)
 end))
-msgNotify(string.format(msgOutputs.loadedMsg, "v0.1.5", config.prefix))
+msgNotify(string.format(msgOutputs.loadedMsg, "v0.1.6", config.prefix))
