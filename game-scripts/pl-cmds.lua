@@ -1,3 +1,8 @@
+--[[
+	pl-cmds.lua, v0.1.6
+	open-source now because skid is steal me code
+	idk what to put in here but its all camelCase i think lol
+--]]
 -- services
 local players = game:GetService("Players")
 local repStorage = game:GetService("ReplicatedStorage")
