@@ -1,5 +1,5 @@
 --[[
-	anti-message-post.lua (modified thingy script of https://v3rmillion.net/showthread.php?tid=1150896.)
+	memefied-message-post.lua (modified thingy script of https://v3rmillion.net/showthread.php?tid=1150896.)
 	a script that just works like the orig script but with memes
 	idk why did i add memes but ye unfunny and lack of effort meme texts thingys
 --]]
@@ -14,7 +14,7 @@ local chatMain = chatScript:FindFirstChild("ChatMain")
 -- variables
 local oldFunc, oldIndex
 local memes = {
-	"synpase x craked 2073 free no virus",
+	"synpase x craked 2022 free no virus *not clickbait*",
 	"if u are reading this then u are a skid.",
 	"i feel so bad about skids reading my chat logs",
 	"\n\nnewline\n",
@@ -27,13 +27,13 @@ local memes = {
 	"kids be like: block hax0r",
 	"Also try Minecraft!",
 	"Also try Terraria!",
-	"a admin reads chatlogs, what happens is shocking",
+	"a \"admin\" reads chatlogs, what happens is shocking",
 	"bahog bhielat",
-	"ukininayo~!",
-	"\0\n\r"
+	"ukininayo",
+	"touch some grass skid",
 }
 -- main
-if player and chatMain then
+if player and chatMain then print("memefied-message-post.lua loaded!")
 	local messagePosted = require(chatMain).MessagePosted
 	local chattedEvent = Instance.new("BindableEvent")
 	chattedEvent.Name = player.Name .. "-ChattedEvent"
@@ -41,7 +41,9 @@ if player and chatMain then
 	oldFunc = hookfunction(messagePosted.fire, function(...)
 		local self, message = ...
 
-		task.spawn(chattedEvent.Fire, chattedEvent, message)
+		if not checkcaller() then
+			task.spawn(chattedEvent.Fire, chattedEvent, message)
+		end
 		return oldFunc(self, memes[math.random(1, #memes)])
 	end)
 	oldIndex = hookmetamethod(game, "__index", newcclosure(function(...)
