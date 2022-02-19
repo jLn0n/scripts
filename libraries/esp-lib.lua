@@ -4,7 +4,7 @@ local players = game:GetService("Players")
 local player = players.LocalPlayer
 local camera = workspace.CurrentCamera
 -- variables
-local headOffset, legOffset = Vector3.new(0, .5, 0), Vector3.new(0, 3, 0)
+local headOffset, legOffset = Vector3.yAxis * .5, Vector3.yAxis * 3
 -- main
 local module = {}
 module.__index = module
@@ -49,7 +49,7 @@ function module:updateRender()
 			local rootPos, rootVisible = camera:WorldToViewportPoint(rootPart.Position)
 			local headPos = camera:WorldToViewportPoint(head.Position + headOffset)
 			local legPos = camera:WorldToViewportPoint(rootPart.Position - legOffset)
-			local notTeammate = self.config.teamCheck and (self.player or self.player.TeamColor ~= player.TeamColor) or (not self.config.teamCheck)
+			local notTeammate = self.config.teamCheck and (self.player and (self.player.Neutral or self.player.TeamColor ~= player.TeamColor)) or (not self.config.teamCheck)
 
 			if rootVisible and notTeammate then
 				self.renderObj.box.Color = self.config.color
