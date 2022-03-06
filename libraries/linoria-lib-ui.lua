@@ -1,3 +1,4 @@
+-- this is a fork of linoria ui library which have some bugfixes and etc.
 local InputService = game:GetService('UserInputService');
 local TextService = game:GetService('TextService');
 local TweenService = game:GetService('TweenService');
