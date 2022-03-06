@@ -164,6 +164,12 @@ function Library:MapValue(Value, MinA, MaxA, MinB, MaxB)
     return (1 - ((Value - MinA) / (MaxA - MinA))) * MinB + ((Value - MinA) / (MaxA - MinA)) * MaxB;
 end;
 
+function Library:RGBToHex(Color)
+	local r, g, b = Color.R or 0, Color.G or 0, Color.B or 0
+    local rgb = (r * 0x10000) + (g * 0x100) + b
+    return string.format("%x", rgb)
+end;
+
 function Library:GetTextBounds(Text, Font, Size)
     return TextService:GetTextSize(Text, Size, Font, Vector2.new(1920, 1080)).X;
 end;
@@ -248,7 +254,7 @@ do
         };
 
         function ColorPicker:SetHSVFromRGB(Color)
-            local H, S, V = Color3:ToHSV(Color);
+            local H, S, V = Color:ToHSV();
 
             ColorPicker.Hue = H;
             ColorPicker.Sat = S;
@@ -466,8 +472,8 @@ do
                 BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
             });
 
-            HueBox.Text = '#' .. ColorPicker.Value:ToHex()
-            RgbBox.Text = table.concat({ math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255) }, ', ')
+            HueBox.Text = string.format("#%s", Library:RGBToHex(ColorPicker.Value))
+            RgbBox.Text = table.concat({ math.floor(ColorPicker.Value.R), math.floor(ColorPicker.Value.G), math.floor(ColorPicker.Value.B) }, ', ')
 
             if ColorPicker.Changed then
                 ColorPicker.Changed();
