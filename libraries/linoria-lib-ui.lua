@@ -1,4 +1,3 @@
--- this is a fork of linoria ui library which do some bugfixing and etc.
 local InputService = game:GetService('UserInputService');
 local TextService = game:GetService('TextService');
 local TweenService = game:GetService('TweenService');
@@ -164,20 +163,19 @@ function Library:MapValue(Value, MinA, MaxA, MinB, MaxB)
     return (1 - ((Value - MinA) / (MaxA - MinA))) * MinB + ((Value - MinA) / (MaxA - MinA)) * MaxB;
 end;
 
-function Library:RGBToHex(Color)
-	local r, g, b = Color.R or 0, Color.G or 0, Color.B or 0
-    local rgb = (r * 0x10000) + (g * 0x100) + b
-    return string.format("%x", rgb)
-end;
-
 function Library:GetTextBounds(Text, Font, Size)
     return TextService:GetTextSize(Text, Size, Font, Vector2.new(1920, 1080)).X;
 end;
 
 function Library:GetDarkerColor(Color)
-    local H, S, V = Color:ToHSV();
+    local H, S, V = Color3.toHSV(Color);
     return Color3.fromHSV(H, S, V / 1.5);
 end; Library.AccentColorDark = Library:GetDarkerColor(Library.AccentColor);
+
+function Library:RGBToHex(Color)
+	local r, g, b = Color.R, Color.G, Color.B
+	return string.format("#%02X%02X%02X", r * 255, g * 255, b * 255)
+end;
 
 function Library:AddToRegistry(Instance, Properties, IsHud)
     local Idx = #Library.Registry + 1;
@@ -245,16 +243,17 @@ do
     local Funcs = {};
 
     function Funcs:AddColorPicker(Idx, Info)
+    	local DefaultColor = Info.Default or Color3.new()
         local ToggleLabel = self.TextLabel;
         local Container = self.Container;
 
         local ColorPicker = {
-            Value = Info.Default;
-            Type = 'ColorPicker';
+            Value = Color3.new(DefaultColor.R / 255, DefaultColor.G / 255, DefaultColor.B / 255),
+            Type = 'ColorPicker',
         };
 
         function ColorPicker:SetHSVFromRGB(Color)
-            local H, S, V = Color:ToHSV();
+            local H, S, V = Color3.toHSV(Color);
 
             ColorPicker.Hue = H;
             ColorPicker.Sat = S;
@@ -443,9 +442,9 @@ do
 
         HueBox.FocusLost:Connect(function(enter)
             if enter then
-                local success, Color = pcall(Color3.fromHex, HueBox.Text)
-                if success and typeof(Color) == 'Color3' then
-                    ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color:ToHSV()
+                local success, result = pcall(Color3.fromHex, HueBox.Text)
+                if success and typeof(result) == 'Color3' then
+                    ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color3.toHSV(result)
                 end
             end
 
@@ -456,7 +455,7 @@ do
             if enter then
                 local r, g, b = RgbBox.Text:match('(%d+),%s*(%d+),%s*(%d+)')
                 if r and g and b then
-                    ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color3.fromRGB(r, g, b):ToHSV()
+                    ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color3.toHSV(Color3.fromRGB(r, g, b))
                 end
             end
 
@@ -472,8 +471,8 @@ do
                 BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
             });
 
-            HueBox.Text = string.format("#%s", Library:RGBToHex(ColorPicker.Value))
-            RgbBox.Text = table.concat({ math.floor(ColorPicker.Value.R), math.floor(ColorPicker.Value.G), math.floor(ColorPicker.Value.B) }, ', ')
+            HueBox.Text = Library:RGBToHex(ColorPicker.Value)
+            RgbBox.Text = string.format("%s, %s, %s", math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255))
 
             if ColorPicker.Changed then
                 ColorPicker.Changed();
