@@ -461,7 +461,7 @@ do
 		end)
 
 		function ColorPicker:Display()
-			ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue / 255, ColorPicker.Sat / 255, ColorPicker.Vib / 255);
+			ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue * 255, ColorPicker.Sat * 255, ColorPicker.Vib * 255);
 			SatVibMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1);
 
 			Library:Create(DisplayFrame, {
