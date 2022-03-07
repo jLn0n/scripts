@@ -253,9 +253,9 @@ do
 		function ColorPicker:SetHSVFromRGB(Color)
 			local H, S, V = Color3.toHSV(Color);
 
-			ColorPicker.Hue = H;
-			ColorPicker.Sat = S;
-			ColorPicker.Vib = V;
+			ColorPicker.Hue = 255 / H;
+			ColorPicker.Sat = 255 / S;
+			ColorPicker.Vib = 255 / V;
 		end;
 
 		ColorPicker:SetHSVFromRGB(ColorPicker.Value);
@@ -461,7 +461,7 @@ do
 		end)
 
 		function ColorPicker:Display()
-			ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue * 255, ColorPicker.Sat * 255, ColorPicker.Vib * 255);
+			ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib);
 			SatVibMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1);
 
 			Library:Create(DisplayFrame, {
