@@ -2536,4 +2536,4 @@ function Library:CreateWindow(WindowTitle)
 	return Window;
 end;
 
-getgenv().uiLibrary = Library -- return Library
+return Library
