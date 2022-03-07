@@ -246,7 +246,7 @@ do
 		local Container = self.Container;
 
 		local ColorPicker = {
-			Value = Color3.new(DefaultColor.R / 255, DefaultColor.G / 255, DefaultColor.B / 255),
+			Value = Color3.new(DefaultColor.R, DefaultColor.G, DefaultColor.B),
 			Type = 'ColorPicker',
 		};
 
@@ -414,7 +414,7 @@ do
 			Position = UDim2.new(0.5, 2, 0, 209),
 			Size = UDim2.new(0.5, -6, 0, 20),
 			Parent = PickerFrameInner
-		})  
+		})
 
 		Library:AddToRegistry(RgbBoxBase.Frame, {
 			BackgroundColor3 = 'MainColor';
@@ -461,7 +461,7 @@ do
 		end)
 
 		function ColorPicker:Display()
-			ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib);
+			ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue / 255, ColorPicker.Sat / 255, ColorPicker.Vib / 255);
 			SatVibMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1);
 
 			Library:Create(DisplayFrame, {
