@@ -4,6 +4,7 @@ local TextService = game:GetService('TextService');
 local TweenService = game:GetService('TweenService');
 local CoreGui = game:GetService('CoreGui');
 local RenderStepped = game:GetService('RunService').RenderStepped;
+local CollectionService = game:GetService('CollectionService')
 local LocalPlayer = game:GetService('Players').LocalPlayer;
 local Mouse = LocalPlayer:GetMouse();
 
@@ -172,7 +173,7 @@ end; Library.AccentColorDark = Library:GetDarkerColor(Library.AccentColor);
 function Library:Color3ToHex(Color)
 	if not Color then return "#000000" end
 	local r, g, b = Color.R, Color.G, Color.B
-	return string.format("#%02X%02X%02X", r * 255, g * 255, b * 255)
+	return string.format("#%02X%02X%02X", r, g, b)
 end;
 
 function Library:AddToRegistry(Instance, Properties, IsHud)
@@ -358,9 +359,6 @@ do
 			Parent = HueSelectorOuter;
 		});
 
-		local HueTextSize = Library:GetTextBounds('Hex color', Enum.Font.Code, 16) + 3
-		local RgbTextSize = Library:GetTextBounds('255, 255, 255', Enum.Font.Code, 16) + 3
-
 		local HexBoxOuter = Library:Create('Frame', {
 			BorderColor3 = Color3.new(0, 0, 0);
 			Position = UDim2.fromOffset(4, 209),
@@ -467,8 +465,9 @@ do
 				BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
 			});
 
+			print(ColorPicker.Value)
 			HexBox.Text = Library:Color3ToHex(ColorPicker.Value)
-			RgbBox.Text = string.format("%s, %s, %s", math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255))
+			RgbBox.Text = string.format("%s, %s, %s", math.floor(ColorPicker.Value.R), math.floor(ColorPicker.Value.G), math.floor(ColorPicker.Value.B))
 
 			if ColorPicker.Changed then
 				ColorPicker.Changed();
@@ -497,15 +496,9 @@ do
 			Library.OpenedFrames[PickerFrameOuter] = nil;
 		end;
 
-		function ColorPicker:SetValue(HSV)
-			local Color = Color3.fromHSV(HSV[1], HSV[2], HSV[3]);
-
-			ColorPicker:SetHSVFromRGB(Color);
-			ColorPicker:Display();
-		end;
-
-		function ColorPicker:SetValueRGB(Color)
-			ColorPicker:SetHSVFromRGB(Color);
+		function ColorPicker:SetValue(...)
+			local v1 = ...
+			ColorPicker:SetHSVFromRGB(typeof(v1) ~= "number" and v1 or Color3.fromHSV(...));
 			ColorPicker:Display();
 		end;
 
@@ -520,8 +513,8 @@ do
 					local MaxY = MinY + SatVibMap.AbsoluteSize.Y;
 					local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
 
-					ColorPicker.Sat = (MouseX - MinX) / (MaxX - MinX);
-					ColorPicker.Vib = 1 - ((MouseY - MinY) / (MaxY - MinY));
+					ColorPicker.HSVData[2] = (MouseX - MinX) / (MaxX - MinX)
+					ColorPicker.HSVData[3] = (1 - ((MouseY - MinY) / (MaxY - MinY)))
 					ColorPicker:Display();
 
 					RenderStepped:Wait();
@@ -538,7 +531,7 @@ do
 					local MaxY = MinY + HueSelectorInner.AbsoluteSize.Y;
 					local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
 
-					ColorPicker.HSVData[1] = ((MouseY - MinY) / (MaxY - MinY));
+					ColorPicker.HSVData[1] = ((MouseY - MinY) / (MaxY - MinY))
 					ColorPicker:Display();
 
 					RenderStepped:Wait();
@@ -2543,4 +2536,4 @@ function Library:CreateWindow(WindowTitle)
 	return Window;
 end;
 
-return Library;
+getgenv().uiLibrary = Library -- return Library
