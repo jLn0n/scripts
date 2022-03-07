@@ -252,8 +252,8 @@ do
 		};
 
 		function ColorPicker:SetHSVFromRGB(Color)
-			table.clear(ColorPicker.HSVData)
-			table.insert(ColorPicker.HSVData, Color3.toHSV(Color))
+			local H, S, V = Color3.toHSV(Color)
+			ColorPicker.HSVData[1], ColorPicker.HSVData[2], ColorPicker.HSVData[3] = H, S, V
 		end;
 
 		ColorPicker:SetHSVFromRGB(ColorPicker.Value);
