@@ -173,7 +173,8 @@ function Library:GetDarkerColor(Color)
     return Color3.fromHSV(H, S, V / 1.5);
 end; Library.AccentColorDark = Library:GetDarkerColor(Library.AccentColor);
 
-function Library:RGBToHex(Color)
+function Library:Color3ToHex(Color)
+	if not Color then return "#000000" end
 	local r, g, b = Color.R, Color.G, Color.B
 	return string.format("#%02X%02X%02X", r * 255, g * 255, b * 255)
 end;
@@ -472,7 +473,7 @@ do
                 BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
             });
 
-            HueBox.Text = Library:RGBToHex(ColorPicker.Value)
+            HueBox.Text = Library:Color3ToHex(ColorPicker.Value)
             RgbBox.Text = string.format("%s, %s, %s", math.floor(ColorPicker.Value.R * 255), math.floor(ColorPicker.Value.G * 255), math.floor(ColorPicker.Value.B * 255))
 
             if ColorPicker.Changed then
