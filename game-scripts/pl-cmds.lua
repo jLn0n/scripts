@@ -387,7 +387,7 @@ commands = {
 			elseif args[1] == "toggle" then
 				config.killAura.enabled = not config.killAura.enabled
 				msgNotify(string.format(msgOutputs.autoToggleNotify, "kill-aura", (config.killAura.enabled and "enabled" or "disabled")))
-			elseif args[1] == "killmode" or args[1] == "kmode" then
+			elseif args[1] == "mode" then
 				config.killAura.killMode = args[2] and ((args[2] == "gun" and "gun") or ((args[2] == "default" or args[2] == "punch") and "punch")) or config.killAura.killMode
 				msgNotify(string.format(msgOutputs.changedNotify, "kill-aura kill mode", config.killAura.killMode))
 			end
@@ -539,7 +539,7 @@ task.spawn(function() -- kill-aura
 				if config.killAura.killMode == "gun" then
 					killPlr(killingPlayers)
 					table.clear(killingPlayers)
-					task.wait(.35)
+					task.wait(.5)
 				elseif config.killAura.killMode == "punch" then
 					for _, plr in ipairs(killingPlayers) do
 						for _ = 1, 25 do punch:FireServer(plr) end
