@@ -1,7 +1,7 @@
 --[[
-	pl-cmds.lua, v0.1.6
-	open-source now because skid is steal me code
-	idk what to put in here but its all camelCase i think lol
+	pl-cmds.lua, v0.1.7
+	:shrug:
+	use fluxus if ur executor doesn't support if-then-else expression
 --]]
 -- services
 local players = game:GetService("Players")
@@ -23,19 +23,23 @@ local punch, shoot, reload, itemGive, teamChange, loadChar =
 	workspace.Remote:FindFirstChild("loadchar")
 -- variables
 local config = {
+	["killAura"] = {
+		["enabled"] = false,
+		["range"] = 25,
+		["killMode"] = "punch",
+	},
 	["killConf"] = {
 		["hrpTarget"] = nil,
 		["killBlacklist"] = table.create(0),
+	},
+	["loopKill"] = {
+		["enabled"] = false,
+		["list"] = table.create(0),
 	},
 	["utils"] = {
 		["autoCriminal"] = false,
 		["autoSpawn"] = false,
 		["invisibility"] = false
-	},
-	["killAura"] = {
-		["enabled"] = false,
-		["range"] = 25,
-		["killMode"] = "punch",
 	},
 	["prefix"] = ";",
 	["walkSpeed"] = 16,
@@ -43,7 +47,6 @@ local config = {
 }
 local msgOutputs = {
 	["commandsOutput"] = {
-		["listing"] = "commands: \n%s",
 		["templateShow"] = "- %s: %s\n",
 		["usageNotify"] = "\nusage: %s",
 		["unknownCommand"] = "command '%s' cannot be found."
@@ -60,8 +63,11 @@ local msgOutputs = {
 	["kill-bl"] = {
 		["plrAdd"] = "added %s to whitelist, player wouldn't be killed anymore.",
 		["plrRemove"] = "removed %s whitelist, player will be killed again.",
-		["list"] = "blacklisted players list: \n%s",
-		["listEmpty"] = "blacklisted player(s) is empty.",
+	},
+	["loop-kill"] = {
+		["plrAdd"] = "added %s to loop-kill list.",
+		["plrRemove"] = "removed %s to loop-kill list.",
+		["allPlrs"] = "%s all players to loop-kill list."
 	},
 	["prefix"] = {
 		["notify"] = "current prefix is '%s'.",
@@ -70,8 +76,10 @@ local msgOutputs = {
 	["argumentError"] = "argument %s should be a %s.",
 	["autoToggleNotify"] = "%s is now %s.",
 	["changedNotify"] = "changed %s to %s.",
+	["emptyNotify"] = "%s is empty.",
 	["giveNotify"] = "you now have '%s'.",
 	["gotoTpSuccess"] = "teleported to %s.",
+	["listNotify"] = "%s list: \n%s",
 	["playerNotFound"] = "cannot find player '%s'.",
 	["teamColorChanged"] = "changed team color to %s. (can only be applied when auto reset is enabled.)",
 	["loadedMsg"] = "%s loaded, prefix is '%s' enjoy!",
@@ -87,9 +95,14 @@ local colorMappings = {
 	["yellow"] = BrickColor.new("Fire Yellow"),
 }
 local cframePlaces = {
-	["nexus"] = CFrame.new(920, 98, 2450),
-	["policeroom"] = CFrame.new(835, 99, 2270),
-	["crimbase"] = CFrame.new(-945, 95, 2055)
+	["armory"] = CFrame.new(835, 99, 2270),
+	["cafeteria"] = CFrame.new(877, 100, 2256),
+	["crimbase"] = CFrame.new(-942, 94, 2055),
+	["gatetower"] = CFrame.new(502, 126, 2306),
+	["nexus"] = CFrame.new(888, 100, 2388),
+	["policeroom"] = CFrame.new(789, 100, 2260),
+	["tower"] = CFrame.new(822, 131, 2588),
+	["yard"] = CFrame.new(791, 98, 2498),
 }
 local itemPickups = {
 	["ak47"] = workspace.Prison_ITEMS.giver["AK-47"].ITEMPICKUP,
@@ -111,7 +124,8 @@ local function autoCrim()
 		local spawnPart = workspace:FindFirstChild("Criminals Spawn"):FindFirstChildWhichIsA("SpawnLocation")
 		local oldSpawnPos = spawnPart.CFrame
 		spawnPart.CFrame = rootPart.CFrame
-		firetouchinterest(spawnPart, rootPart, 0); firetouchinterest(spawnPart, rootPart, 1)
+		firetouchinterest(spawnPart, rootPart, 0)
+		firetouchinterest(spawnPart, rootPart, 1)
 		spawnPart.CFrame = oldSpawnPos
 	end
 end
@@ -125,7 +139,8 @@ end
 local function invisSelf(bypassToggle)
 	if (bypassToggle or config.utils.invisibility) and (character and rootPart) then
 		local cloneRootPart, oldPos = rootPart:Clone(), character:GetPivot()
-		character:PivotTo(CFrame.new(Vector3.one * 1e10)); task.wait(.25)
+		character:PivotTo(CFrame.new(Vector3.one * 1e10))
+		task.wait(.25)
 		rootPart.Anchored = true
 		character.Parent = nil
 		rootPart:Destroy()
@@ -146,11 +161,14 @@ local function makeShootPackets(shootPackets, targetPart)
 	return shootPackets
 end
 local function killPlr(arg1)
-	local gunObj = player.Backpack:FindFirstChild("M9")
+	local gunObj = player.Backpack:FindFirstChild("M9") or (player.Character and player.Character:FindFirstChild("M9"))
 	local shootPackets = table.create(0)
 	if not gunObj then
 		itemGive:InvokeServer(workspace.Prison_ITEMS.giver.M9.ITEMPICKUP)
 		gunObj = player.Backpack:FindFirstChild("M9")
+		humanoid:EquipTool(gunObj)
+		gunObj:FindFirstChild("Handle"):BreakJoints()
+		humanoid:UnequipTools()
 	end
 	if typeof(arg1) == "table" then
 		for _, plr in ipairs(arg1) do
@@ -168,7 +186,8 @@ local function killPlr(arg1)
 		teamChange:FireServer("Medium stone grey"); isKilling = false
 		task.defer((not config.utils.autoCriminal and teamChange.FireServer or autoCrim), teamChange, "Bright orange")
 	end
-	shoot:FireServer(shootPackets, gunObj); reload:FireServer(gunObj)
+	shoot:FireServer(shootPackets, gunObj)
+	reload:FireServer(gunObj)
 end
 local function countTable(tableArg)
 	local count = 0
@@ -185,22 +204,27 @@ local function msgNotify(msg)
 		FontSize = Enum.FontSize.Size32,
 	})
 end
+local function teamSetsMatched(strArg)
+	return (
+		if (strArg == "cops" or strArg == "guards") then "Bright blue"
+		elseif (strArg == "crims" or strArg == "criminals") then "Really red"
+		elseif (strArg == "inmates" or strArg == "prisoners") then "Bright orange" else false
+	)
+end
 local function stringFindPlayer(strArg, allowSets)
 	strArg = string.lower(strArg)
 	local result, playersList = table.create(0), players:GetPlayers()
-	if allowSets and (strArg == "cops" or strArg == "guards") or (strArg == "crims" or strArg == "criminals") or (strArg == "inmates" or strArg == "prisoners") then
+	local teamColorMatched = teamSetsMatched(strArg)
+	if allowSets and teamColorMatched then
 		for _, plr in ipairs(playersList) do
-			if plr ~= player and plr.Character and plr.TeamColor.Name == (
-				(strArg == "cops" or strArg == "guards") and "Bright blue" or
-				(strArg == "crims" or strArg == "criminals") and "Really red" or
-				(strArg == "inmates" or strArg == "prisoners") and "Bright orange" or nil
-			) then
+			if plr ~= player and plr.Character and plr.TeamColor.Name == teamColorMatched then
 				table.insert(result, plr)
 			end
 		end
 		return result
-	elseif strArg == "random" then
-		return playersList[math.random(1, #playersList)]
+	elseif strArg == "random" and #playersList >= 1 then
+		local chosenPlr = playersList[math.random(1, #playersList)]
+		return chosenPlr ~= player and chosenPlr or stringFindPlayer(strArg)
 	else
 		for _, plr in ipairs(playersList) do
 			local atMatch = string.match(strArg, "^@")
@@ -220,6 +244,7 @@ local function getCommandParentName(cmdName)
 		result = commands[cmdName] and cmdName or nil
 		if not result then
 			for cmdAliasParent, cmdAliasList in pairs(cmdAliases) do
+				if typeof(cmdAliasList) ~= "table" then continue end
 				if table.find(cmdAliasList, cmdName) then
 					result = cmdAliasParent
 					break
@@ -253,9 +278,9 @@ end
 --[==[[ commands
 	command template:
 	["example"] = {
-		["aliases"] = {},
+		["aliases"] = {}, -- nil is acceptable
 		["desc"] = "",
-		["usage"] "<arg1: string | [sarg1 | sarg2]: string | arg2: number (if sarg2)>", -- optional
+		["usage"] = "<arg1: string | [sarg1 | sarg2]: string | arg2: number (if sarg2)>", -- optional
 		["callback"] = function(speaker, args)
 		end
 	},
@@ -297,7 +322,7 @@ commands = {
 				cmdName = config.prefix .. cmdName
 				msgResult = msgResult .. string.format(msgOutputs.commandsOutput.templateShow, (countTable(cmdData.aliases) ~= 0 and string.format("%s/%s", cmdName, table.concat(cmdData.aliases, "/")) or cmdName), cmdData.desc)
 			end
-			msgNotify(string.format(msgOutputs.commandsOutput.listing, msgResult))
+			msgNotify(string.format(msgOutputs.listNotify, "commands", msgResult))
 		end
 	},
 	["giveitem"] = {
@@ -320,7 +345,7 @@ commands = {
 			local localStoredVar = cframePlaces[args[1]] or stringFindPlayer(args[1])
 			localStoredVar = (typeof(localStoredVar) == "Instance") and ((localStoredVar and localStoredVar.Character) and localStoredVar.Character:FindFirstChild("HumanoidRootPart")) or localStoredVar
 			if localStoredVar then
-				character:PivotTo((typeof(localStoredVar) == "Instance") and localStoredVar.CFrame or localStoredVar)
+				character:PivotTo(((typeof(localStoredVar) == "Instance") and localStoredVar.CFrame or localStoredVar) * CFrame.new(Vector3.zAxis * 4))
 				msgNotify(string.format(msgOutputs.gotoTpSuccess, ((typeof(localStoredVar) == "Instance") and localStoredVar.Parent.Name or args[1])))
 			end
 		end
@@ -345,7 +370,7 @@ commands = {
 				local targetPlr = stringFindPlayer(args[1], true)
 				if targetPlr then
 					killPlr(targetPlr)
-					msgNotify(string.format(msgOutputs.kill.targetPlr, (type(targetPlr) ~= "table" and targetPlr.Name or args[1])))
+					msgNotify(string.format(msgOutputs.kill.targetPlr, (if typeof(targetPlr) == "table" then args[2] else targetPlr.Name)))
 				end
 			end
 		end
@@ -353,7 +378,7 @@ commands = {
 	["kill-aura"] = {
 		["aliases"] = {"kaura"},
 		["desc"] = "kills player(s) near your character.",
-		["usage"] = "<[toggle | range | killmode]: string> <range: number (if range) or [punch | gun(experimental)]: string (if killmode)>",
+		["usage"] = "<[toggle | range | killmode]: string> <range: number (if range) or [punch | gun]: string (if killmode)>",
 		["callback"] = function(_, args)
 			if args[1] == "range" then
 				local _, result = pcall(tonumber, args[2])
@@ -373,21 +398,60 @@ commands = {
 		["desc"] = "blacklist player from being killed with commands.",
 		["usage"] = "<[add | remove | list]: string> <player: string (if add or remove)>",
 		["callback"] = function(_, args)
-			local targetPlr = args[2] and stringFindPlayer(args[2]) or nil
-			if targetPlr and (args[1] == "add" or args[1] == "remove") then
-				config.killConf.killBlacklist[targetPlr.Name] = (args[1] == "add" and true or args[1] == "remove" and false)
-				msgNotify(string.format(msgOutputs["kill-bl"][(config.killConf.killBlacklist[targetPlr.Name] and "plrAdd" or "plrRemove")], targetPlr.Name))
+			if (args[1] == "add" or args[1] == "remove") then
+				local targetPlr = args[2] and stringFindPlayer(args[2]) or nil
+				if targetPlr then
+					config.killConf.killBlacklist[targetPlr.Name] = (args[1] == "add" and true or args[1] == "remove" and false)
+					msgNotify(string.format(msgOutputs["kill-bl"][(config.killConf.killBlacklist[targetPlr.Name] and "plrAdd" or "plrRemove")], targetPlr.Name))
+				end
 			elseif args[1] == "list" then
 				local listResult = ""
 				for plrName, blValue in pairs(config.killConf.killBlacklist) do
 					listResult = listResult .. string.format("%s: %s\n", plrName, blValue)
 				end
-				msgNotify(countTable(config.killConf.killBlacklist) ~= 0 and string.format(msgOutputs["kill-bl"].list, listResult) or msgOutputs["kill-bl"].listEmpty)
+				msgNotify(countTable(config.killConf.killBlacklist) ~= 0 and string.format(msgOutputs.listNotify, "blacklisted player(s)", listResult) or msgOutputs.emptyNotify)
+			end
+		end
+	},
+	["loop-kill"] = {
+		["aliases"] = {"lkill"},
+		["desc"] = "loopkills player(s)",
+		["usage"] = "<[toggle | add | remove | list]: string> <player: string (if add or remove)>",
+		["callback"] = function(_, args)
+			if (args[1] == "add" or args[1] == "remove") then
+				if args[2] == "all" then
+					for _, plr in ipairs(players:GetPlayers()) do
+						if plr == player then continue end
+						config.loopKill.list[plr.Name] = (if args[1] == "add" then true elseif args[1] == "remove" then false else config.loopKill.list[plr.Name])
+					end
+					msgNotify(string.format(msgOutputs["loop-kill"].allPlrs, (if args[1] == "add" then "added" elseif args[1] == "remove" then "remove" else false)))
+				else
+					local targetPlr = args[2] and stringFindPlayer(args[2], true) or nil
+					if targetPlr then
+						if typeof(targetPlr) == "table" then
+							for _, plr in ipairs(targetPlr) do
+								config.loopKill.list[plr.Name] = (if args[1] == "add" then true elseif args[1] == "remove" then false else config.loopKill.list[plr.Name])
+							end
+						else
+							config.loopKill.list[targetPlr.Name] = (if args[1] == "add" then true elseif args[1] == "remove" then false else config.loopKill.list[targetPlr.Name])
+						end
+						msgNotify(string.format(msgOutputs["loop-kill"][(if args[1] == "add" then "plrAdd" elseif args[1] == "remove" then "plrRemove" else false)], (if typeof(targetPlr) == "table" then args[2] else targetPlr.Name)))
+					end
+				end
+			elseif args[1] == "toggle" then
+				config.loopKill.enabled = not config.loopKill.enabled
+				msgNotify(string.format(msgOutputs.autoToggleNotify, "loop-kill", (config.loopKill.enabled and "enabled" or "disabled")))
+			elseif args[1] == "list" then
+				local listResult = ""
+				for plrName, blValue in pairs(config.loopKill.list) do
+					listResult = listResult .. string.format("%s: %s\n", plrName, blValue)
+				end
+				msgNotify(countTable(config.loopKill.list) ~= 0 and string.format(msgOutputs.listNotify, "loopkilled player(s)", listResult) or msgOutputs.emptyNotify)
 			end
 		end
 	},
 	["prefix"] = {
-		["aliases"] = {},
+		["aliases"] = nil,
 		["desc"] = "changes/says current prefix.",
 		["callback"] = function(_, args)
 			if args[1] then
@@ -421,7 +485,7 @@ commands = {
 	["jump-power"] = {
 		["aliases"] = {"jp", "jumppower"},
 		["desc"] = "modifies jump power.",
-		["usage"] = "<number>",
+		["usage"] = "<jumppower: number>",
 		["callback"] = function(_, args)
 			local _, result = pcall(tonumber, args[1])
 			config.jumpPower = result or config.jumpPower
@@ -431,7 +495,7 @@ commands = {
 	["walk-speed"] = {
 		["aliases"] = {"ws", "walkspeed"},
 		["desc"] = "modifies walkspeed.",
-		["usage"] = "<number>",
+		["usage"] = "<walkspeed: number>",
 		["callback"] = function(_, args)
 			local _, result = pcall(tonumber, args[1])
 			config.walkSpeed = result or config.walkSpeed
@@ -458,27 +522,48 @@ runService.Heartbeat:Connect(function()
 		humanoid.WalkSpeed, humanoid.JumpPower = config.walkSpeed, config.jumpPower
 	end
 end)
-task.spawn(function()
+task.spawn(function() -- kill-aura
+	local killingPlayers = table.create(0)
 	while true do task.wait()
 		if config.killAura.enabled then
-			local killingPlayers = table.create(0)
 			for _, plr in ipairs(players:GetPlayers()) do
-				if plr ~= player then
+				if not config.killConf.killBlacklist[plr.Name] or plr ~= player then
 					local plrChar = plr.Character
 					local _rootPart, _humanoid = plrChar and plrChar:FindFirstChild("HumanoidRootPart") or nil, plrChar and plrChar:FindFirstChildWhichIsA("Humanoid") or nil
-					if not config.killConf.killBlacklist[plr.Name] and ((plrChar and not plrChar:FindFirstChildWhichIsA("ForceField")) and (_humanoid and _humanoid.Health ~= 0) and (_rootPart and player:DistanceFromCharacter(_rootPart.Position) < config.killAura.range)) then
+					if ((plrChar and not plrChar:FindFirstChildWhichIsA("ForceField")) and (_humanoid and _humanoid.Health ~= 0) and (_rootPart and player:DistanceFromCharacter(_rootPart.Position) < config.killAura.range)) then
 						table.insert(killingPlayers, plr)
 					end
 				end
 			end
-			if config.killAura.killMode == "gun" and #killingPlayers ~= 0 then
-				killPlr(killingPlayers)
-				task.wait(.35)
-			elseif config.killAura.killMode == "punch" then
-				for _, plr in ipairs(killingPlayers) do
-					for _ = 1, 25 do punch:FireServer(plr) end
+			if #killingPlayers ~= 0 then
+				if config.killAura.killMode == "gun" then
+					killPlr(killingPlayers)
+					table.clear(killingPlayers)
+					task.wait(.35)
+				elseif config.killAura.killMode == "punch" then
+					for _, plr in ipairs(killingPlayers) do
+						for _ = 1, 25 do punch:FireServer(plr) end
+					end
 				end
 			end
+		end
+	end
+end)
+task.spawn(function() -- loop-kill
+	local killingPlayers = table.create(0)
+	while true do task.wait()
+		if config.loopKill.enabled then
+			for _, plr in ipairs(players:GetPlayers()) do
+				local _humanoid = plr.Character and plr.Character:FindFirstChild("Humanoid") or nil
+				if config.loopKill.list[plr.Name] and ((plr.Character and not plr.Character:FindFirstChildWhichIsA("ForceField")) and (_humanoid and _humanoid.Health ~= 0)) then
+					table.insert(killingPlayers, plr)
+				end
+			end
+			if #killingPlayers ~= 0 then
+				killPlr(killingPlayers)
+				table.clear(killingPlayers)
+			end
+			task.wait(.75)
 		end
 	end
 end)
@@ -492,4 +577,4 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
 	end
 	return oldNamecall(...)
 end))
-msgNotify(string.format(msgOutputs.loadedMsg, "v0.1.6", config.prefix))
+msgNotify(string.format(msgOutputs.loadedMsg, "v0.1.7", config.prefix))
