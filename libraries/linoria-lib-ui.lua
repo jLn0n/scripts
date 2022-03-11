@@ -457,7 +457,7 @@ do
 		end)
 
 		function ColorPicker:Display()
-			ColorPicker.Value = Color3.fromHSV(table.unpack(ColorPicker.HSVData));
+			ColorPicker.Value = Color3.fromRGB(ColorPicker.HSVData[1] * 255, ColorPicker.HSVData[2] * 255, ColorPicker.HSVData[3] * 255)
 			SatVibMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.HSVData[1], 1, 1);
 
 			Library:Create(DisplayFrame, {
@@ -497,9 +497,8 @@ do
 		end;
 
 		function ColorPicker:SetValue(...)
-			local v1 = ...
-			ColorPicker:SetHSVFromRGB(typeof(v1) ~= "number" and v1 or Color3.fromHSV(...));
-			ColorPicker:Display();
+			ColorPicker:SetHSVFromRGB(typeof(...) == "number" and Color3.fromHSV(...) or ...)
+			ColorPicker:Display()
 		end;
 
 		SatVibMap.InputBegan:Connect(function(Input)
@@ -513,8 +512,7 @@ do
 					local MaxY = MinY + SatVibMap.AbsoluteSize.Y;
 					local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
 
-					ColorPicker.HSVData[2] = (MouseX - MinX) / (MaxX - MinX)
-					ColorPicker.HSVData[3] = (1 - ((MouseY - MinY) / (MaxY - MinY)))
+					ColorPicker:SetValue(ColorPicker.HSVData[1], ((MouseX - MinX) / (MaxX - MinX)), (1 - ((MouseY - MinY) / (MaxY - MinY))))
 					ColorPicker:Display();
 
 					RenderStepped:Wait();
@@ -531,6 +529,7 @@ do
 					local MaxY = MinY + HueSelectorInner.AbsoluteSize.Y;
 					local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
 
+					ColorPicker:SetValue(((MouseY - MinY) / (MaxY - MinY)), ColorPicker.HSVData[2], ColorPicker.HSVData[3])
 					ColorPicker.HSVData[1] = ((MouseY - MinY) / (MaxY - MinY))
 					ColorPicker:Display();
 
