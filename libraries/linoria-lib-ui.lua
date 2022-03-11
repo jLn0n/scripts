@@ -170,11 +170,28 @@ function Library:GetDarkerColor(Color)
 	return Color3.fromHSV(H, S, V / 1.5);
 end; Library.AccentColorDark = Library:GetDarkerColor(Library.AccentColor);
 
-function Library:Color3ToHex(Color)
-	if not Color then return "#000000" end
-	local r, g, b = Color.R, Color.G, Color.B
-	return string.format("#%02X%02X%02X", r, g, b)
+function Library:Color3ToHex(...)
+	if not ... then return "#000000" end
+	--[[local r, g, b do
+		local isValueColor3 = (typeof(...) == "Color3")
+		if isValueColor3 then
+			local colorArgValue = ...
+			r, g, b = colorArgValue.R, colorArgValue.G, colorArgValue.B
+		else
+			r, g, b = ...
+		end
+	end--]]
+	return string.format("#%02X%02X%02X", ...)
 end;
+
+function Library:GetRGBInteger(color3Value)
+	local r, g, b = color3Value.R, color3Value.G, color3Value.B
+	if ((r == math.floor(r)) and (g == math.floor(g)) and (b == math.floor(b))) then
+		return r, g, b
+	else
+		return r * 255, g * 255, b * 255
+	end
+end
 
 function Library:AddToRegistry(Instance, Properties, IsHud)
 	local Idx = #Library.Registry + 1;
@@ -456,17 +473,17 @@ do
 		end)
 
 		function ColorPicker:Display()
-			ColorPicker.Value = Color3.fromRGB(ColorPicker.HSVData[1] * 255, ColorPicker.HSVData[2] * 255, ColorPicker.HSVData[3] * 255)
+			ColorPicker.Value = Color3.fromHSV(table.unpack(ColorPicker.HSVData))
 			SatVibMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.HSVData[1], 1, 1);
+			local CP_R, CP_G, CP_B = Library:GetRGBInteger(ColorPicker.Value)
 
 			Library:Create(DisplayFrame, {
 				BackgroundColor3 = ColorPicker.Value;
 				BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
 			});
 
-			print(ColorPicker.Value)
-			HexBox.Text = Library:Color3ToHex(ColorPicker.Value)
-			RgbBox.Text = string.format("%s, %s, %s", math.floor(ColorPicker.Value.R), math.floor(ColorPicker.Value.G), math.floor(ColorPicker.Value.B))
+			HexBox.Text = Library:Color3ToHex(CP_R, CP_G, CP_B)
+			RgbBox.Text = string.format("%s, %s, %s", math.floor(CP_R), math.floor(CP_G), math.floor(CP_B))
 
 			if ColorPicker.Changed then
 				ColorPicker.Changed();
@@ -496,7 +513,8 @@ do
 		end;
 
 		function ColorPicker:SetValue(...)
-			ColorPicker:SetHSVFromRGB(typeof(...) == "number" and Color3.fromHSV(...) or ...)
+			local colorValue = (typeof(...) == "number" and Color3.fromHSV(...) or ...)
+			ColorPicker:SetHSVFromRGB(colorValue)
 			ColorPicker:Display()
 		end;
 
@@ -2533,4 +2551,5 @@ function Library:CreateWindow(WindowTitle)
 	return Window;
 end;
 
+getgenv().uiLibrary = Library
 return Library
