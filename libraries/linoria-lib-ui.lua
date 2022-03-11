@@ -166,7 +166,7 @@ function Library:GetTextBounds(Text, Font, Size)
 end;
 
 function Library:GetDarkerColor(Color)
-	local H, S, V = Color3.toHSV(Color);
+	local H, S, V = Color:ToHSV();
 	return Color3.fromHSV(H, S, V / 1.5);
 end; Library.AccentColorDark = Library:GetDarkerColor(Library.AccentColor);
 
@@ -242,18 +242,17 @@ do
 	local Funcs = {};
 
 	function Funcs:AddColorPicker(Idx, Info)
-		local DefaultColor = Info.Default or Color3.new()
 		local ToggleLabel = self.TextLabel;
 		local Container = self.Container;
 
 		local ColorPicker = {
-			Value = DefaultColor,
+			Value = Info.Default or Color3.new(),
 			Type = 'ColorPicker',
 			HSVData = table.create(0)
 		};
 
 		function ColorPicker:SetHSVFromRGB(Color)
-			local H, S, V = Color3.toHSV(Color)
+			local H, S, V = Color:ToHSV()
 			ColorPicker.HSVData[1], ColorPicker.HSVData[2], ColorPicker.HSVData[3] = H, S, V
 		end;
 
@@ -530,7 +529,6 @@ do
 					local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
 
 					ColorPicker:SetValue(((MouseY - MinY) / (MaxY - MinY)), ColorPicker.HSVData[2], ColorPicker.HSVData[3])
-					ColorPicker.HSVData[1] = ((MouseY - MinY) / (MaxY - MinY))
 					ColorPicker:Display();
 
 					RenderStepped:Wait();
