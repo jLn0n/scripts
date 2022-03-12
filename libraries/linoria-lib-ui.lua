@@ -189,7 +189,7 @@ function Library:GetRGBInteger(color3Value)
 	if ((r == math.floor(r)) and (g == math.floor(g)) and (b == math.floor(b))) then
 		return r, g, b
 	else
-		return r * 255, g * 255, b * 255
+		return math.round(r * 255), math.round(g * 255), math.round(b * 255)
 	end
 end
 
