@@ -186,11 +186,10 @@ end;
 
 function Library:GetRGBInteger(color3Value)
 	local r, g, b = color3Value.R, color3Value.G, color3Value.B
-	-- code down here needs some improvement because if one of the values here is 1 then it will gonna be multiplied
 	local r2, g2, b2 = (r - .1), (g - .1), (b - .1)
-	r = ((r2 == math.floor(r2) and r2 < 1) and math.round(r * 255) or r)
-	g = ((g2 == math.floor(g2) and g2 < 1) and math.round(g * 255) or g)
-	b = ((b2 == math.floor(b2) and b2 < 1) and math.round(b * 255) or b)
+	r = ((r2 ~= math.floor(r2) and r2 < 1) and math.round(r * 255) or r)
+	g = ((g2 ~= math.floor(g2) and g2 < 1) and math.round(g * 255) or g)
+	b = ((b2 ~= math.floor(b2) and b2 < 1) and math.round(b * 255) or b)
 	return r, g, b
 end
 
