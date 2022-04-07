@@ -201,7 +201,7 @@ for _, funcName in ipairs(gunModuleFuncNamesToHook) do
 	local funcCache = rawget(gunModule, funcName)
 	if not funcCache then continue end
 	rawset(gunModule, funcName, function(weaponData)
-		weaponDataCache = (weaponDataCache.Name ~= weaponData.Name and shallowCopy(weaponData) or weaponDataCache)
+		weaponDataCache = ((not weaponDataCache or weaponData.Name ~= weaponDataCache.Name) and shallowCopy(weaponData) or weaponDataCache)
 		weaponData = mergeTable(weaponData, weaponSettings)
 		return funcCache(weaponData)
 	end)
