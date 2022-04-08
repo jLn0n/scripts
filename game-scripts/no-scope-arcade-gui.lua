@@ -6,8 +6,10 @@ local config = {
 		["NoRecoil"] = false,
 		["NoSpread"] = false,
 		["NoReload"] = false,
-		["Firerate"] = .15,
-		["FirerateToggle"] = false,
+		["GunFirerate"] = false,
+		["KnifeFirerate"] = false,
+		["GunFirerateValue"] = .15,
+		["KnifeFirerateValue"] = .1,
 	},
 	["SilentAim"] = {
 		["Toggle"] = false,
@@ -149,8 +151,10 @@ weaponModsTab:AddToggle("WeaponMods.NoEqDelay", {Text = "No Equip Delay"})
 weaponModsTab:AddToggle("WeaponMods.NoRecoil", {Text = "No Recoil"})
 weaponModsTab:AddToggle("WeaponMods.NoReload", {Text = "No Reload"})
 weaponModsTab:AddToggle("WeaponMods.NoSpread", {Text = "No Spread"})
-weaponModsTab:AddToggle("WeaponMods.FirerateToggle", {Text = "Toggle Firerate"})
-weaponModsTab:AddSlider("WeaponMods.Firerate", {Text = "Firerate", Default = .01, Min = .01, Max = 1, Rounding = 2})
+weaponModsTab:AddToggle("WeaponMods.GunFirerate", {Text = "Toggle Gun Firerate"})
+weaponModsTab:AddSlider("WeaponMods.GunFirerateValue", {Text = "Gun Firerate", Default = 0, Min = .1, Max = 1, Rounding = 2})
+weaponModsTab:AddToggle("WeaponMods.KnifeFirerate", {Text = "Toggle Knife Firerate"})
+weaponModsTab:AddSlider("WeaponMods.KnifeFirerateValue", {Text = "Knife Firerate", Default = 0, Min = .05, Max = 1, Rounding = 2})
 
 espTab:AddToggle("Esp.Toggle", {Text = "Toggle"})
 espTab:AddToggle("Esp.Boxes", {Text = "Boxes"})
@@ -181,8 +185,8 @@ local oldNamecall do
 
 		if not checkcaller() then
 			if namecallMethod == "FireServer" then
-				if (self.Name == "RemoteEvent" and args[2] == "Bullet") then
-					if (config.SilentAim.Toggle and config.SilentAim.AlwaysHit) and nearestPlr then
+				if self.Name == "RemoteEvent" then
+					if args[2] == "Bullet" and ((config.SilentAim.Toggle and config.SilentAim.AlwaysHit) and nearestPlr) then
 						args[3] = nearestPlr.character
 						args[4] = nearestPlr.aimPart
 						args[5] = nearestPlr.aimPart.Position
@@ -211,10 +215,14 @@ runService.Heartbeat:Connect(function()
 	espLibrary.Boxes, espLibrary.Names, espLibrary.Tracers = config.Esp.Boxes, config.Esp.Names, config.Esp.Tracers
 	if weaponDataCache then
 		weaponSettings.Range = 9e6
-		weaponSettings.EquipTime = (config.WeaponMods.NoEqDelay and 0 or weaponDataCache.EquipTime)
-		weaponSettings.FireRate = (config.WeaponMods.FirerateToggle and config.WeaponMods.Firerate or weaponDataCache.FireRate)
 		weaponSettings.Automatic = (config.WeaponMods.AlwaysAuto and true or weaponDataCache.Automatic)
-		weaponSettings.RecoilMult = (config.WeaponMods.NoRecoil and .025 or weaponDataCache.RecoilMult)
+		weaponSettings.EquipTime = (config.WeaponMods.NoEqDelay and 0 or weaponDataCache.EquipTime)
+		weaponSettings.FireRate = (
+			(config.WeaponMods.KnifeFirerate and weaponDataCache.Name == "Knife") and config.WeaponMods.KnifeFirerateValue or
+			(config.WeaponMods.GunFirerate and weaponDataCache.Name ~= "Knife") and config.WeaponMods.GunFirerateValue or
+			weaponDataCache.FireRate
+		)
+		weaponSettings.RecoilMult = (config.WeaponMods.NoRecoil and 0 or weaponDataCache.RecoilMult)
 		weaponSettings.ReloadTime = (config.WeaponMods.NoReload and 0 or weaponDataCache.ReloadTime)
 		weaponSettings.Spread = (config.WeaponMods.NoSpread and 0 or weaponDataCache.Spread)
 	end
