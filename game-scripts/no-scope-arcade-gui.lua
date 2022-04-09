@@ -218,9 +218,9 @@ runService.Heartbeat:Connect(function()
 		weaponSettings.Automatic = (config.WeaponMods.AlwaysAuto and true or weaponDataCache.Automatic)
 		weaponSettings.EquipTime = (config.WeaponMods.NoEqDelay and 0 or weaponDataCache.EquipTime)
 		weaponSettings.FireRate = (
-			(config.WeaponMods.KnifeFirerate and weaponDataCache.Name == "Knife") and config.WeaponMods.KnifeFirerateValue or
-			(config.WeaponMods.GunFirerate and weaponDataCache.Name ~= "Knife") and config.WeaponMods.GunFirerateValue or
-			weaponDataCache.FireRate
+			if (weaponDataCache.Name == "Knife" and config.WeaponMods.KnifeFirerate) then config.WeaponMods.KnifeFirerateValue
+			elseif (weaponDataCache.Name ~= "Knife" and config.WeaponMods.GunFirerate) then config.WeaponMods.GunFirerateValue
+			else weaponDataCache.FireRate
 		)
 		weaponSettings.RecoilMult = (config.WeaponMods.NoRecoil and 0 or weaponDataCache.RecoilMult)
 		weaponSettings.ReloadTime = (config.WeaponMods.NoReload and 0 or weaponDataCache.ReloadTime)
