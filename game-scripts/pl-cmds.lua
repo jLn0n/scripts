@@ -53,6 +53,7 @@ local msgOutputs = {
 	["invisible"] = {
 		["enabled"] = ", nobody can see you now",
 		["disabled"] = ", anyone can see you now",
+		["notify"] = "you are now invisible to other players.",
 	},
 	["kill"] = {
 		["allPlrs"] = "killed all players.",
