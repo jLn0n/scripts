@@ -230,7 +230,7 @@ local function msgNotify(msg)
 	})
 end
 local function onCharacterSpawned(spawnedCharacter)
-	if (not isInvis and spawnedCharacter ~= currentInvisChar )then
+	if (not isInvis and spawnedCharacter ~= currentInvisChar) then
 		spawnedCharacter.Archivable = true
 		character = spawnedCharacter
 		humanoid, rootPart = character:WaitForChild("Humanoid"), character:WaitForChild("HumanoidRootPart")
@@ -375,7 +375,7 @@ commands = {
 	["goto"] = {
 		["aliases"] = {"to"},
 		["desc"] = "teleports to place/player.",
-		["usage"] = "<[player/placeName]: string (put ~ before 'placeName' if place)>",
+		["usage"] = "<[player or placeName]: string (put ~ before 'placeName' if place)>",
 		["callback"] = function(args)
 			local arg1Result
 			local placePrefixMatch = string.match(args[1] or "", "^~")
