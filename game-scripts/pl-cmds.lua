@@ -135,15 +135,23 @@ local function isSelfNeutral()
 	local plrTeamName = player.TeamColor.Name
 	return not (plrTeamName == "Bright blue" or plrTeamName == "Really red" or plrTeamName == "Bright orange")
 end
+local function respawnSelf(bypassToggle, dontUseCustomTeamColor)
+	if (bypassToggle or config.misc.autoSpawn) then
+		if isInvis then toggleInvisSelf(true) end
+		local oldPos = character:GetPivot()
+		loadChar:InvokeServer(player, (config.misc.autoCriminal and "Really red" or ((not dontUseCustomTeamColor and currentTeamColor) and currentTeamColor.Name or player.TeamColor.Name)))
+		task.defer(character.PivotTo, character, oldPos)
+	end
+end
 local function autoCrim()
 	if (config.misc.autoCriminal and not isKilling and player.TeamColor.Name ~= "Really red") then
 		local plrRootPart = (if config.misc.invisibility then origChar:FindFirstChild("HumanoidRootPart") else rootPart)
 		if plrRootPart then
 			local spawnPart = workspace:FindFirstChild("Criminals Spawn"):FindFirstChildWhichIsA("SpawnLocation")
 			local oldSpawnPos = spawnPart.CFrame
-			spawnPart.CFrame = rootPart.CFrame
-			firetouchinterest(spawnPart, rootPart, 0)
-			firetouchinterest(spawnPart, rootPart, 1)
+			spawnPart.CFrame = plrRootPart.CFrame
+			firetouchinterest(spawnPart, plrRootPart, 0)
+			firetouchinterest(spawnPart, plrRootPart, 1)
 			spawnPart.CFrame = oldSpawnPos
 		end
 	end
@@ -174,14 +182,6 @@ local function toggleInvisSelf(bypassToggle, removeInvis)
 		end
 		character.Animate.Disabled = false
 		isInvis = (if removeInvis then false else not isInvis)
-	end
-end
-local function respawnSelf(bypassToggle, dontUseCustomTeamColor)
-	if (bypassToggle or config.misc.autoSpawn) and rootPart then
-		if isInvis then toggleInvisSelf(true) end
-		local oldPos = character:GetPivot()
-		loadChar:InvokeServer(player, (config.misc.autoCriminal and "Really red" or ((not dontUseCustomTeamColor and currentTeamColor) and currentTeamColor.Name or player.TeamColor.Name)))
-		task.defer(character.PivotTo, character, oldPos)
 	end
 end
 local function genShootPayload(shootPackets, targetPart)
