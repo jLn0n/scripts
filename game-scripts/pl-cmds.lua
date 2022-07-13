@@ -1,5 +1,5 @@
 --[[
-	pl-cmds.lua, v0.1.8c
+	pl-cmds.lua, v0.1.8d
 	spagetti code go brr
 	https://scriptblox.com/script/Prison-Life-(Cars-fixed!)-plcmds.lua-1140
 --]]
@@ -21,6 +21,9 @@ local itemGive = workspace.Remote:FindFirstChild("ItemHandler")
 local teamChange = workspace.Remote:FindFirstChild("TeamEvent")
 local loadChar = workspace.Remote:FindFirstChild("loadchar")
 -- variables
+local commands, currentCameraSubject, currentInvisChar, currentTeamColor, oldNamecall, origChar
+local isKilling, isInvis = false, false
+local connections, cmdAliases = table.create(0), table.create(0)
 local config = {
 	["killAura"] = {
 		["enabled"] = false,
@@ -116,9 +119,6 @@ local itemPickups = {
 	["m9"] = workspace.Prison_ITEMS.giver.M9.ITEMPICKUP,
 	["shotgun"] = workspace.Prison_ITEMS.giver["Remington 870"].ITEMPICKUP,
 }
-local connections, cmdAliases = table.create(0), table.create(0)
-local isKilling, isInvis = false, false
-local commands, currentCameraSubject, currentInvisChar, currentTeamColor, oldNamecall, origChar
 -- functions
 local function countTable(tableArg)
 	local count = 0
@@ -135,25 +135,14 @@ local function isSelfNeutral()
 	local plrTeamName = player.TeamColor.Name
 	return not (plrTeamName == "Bright blue" or plrTeamName == "Really red" or plrTeamName == "Bright orange")
 end
-local function respawnSelf(bypassToggle, dontUseCustomTeamColor)
-	if (bypassToggle or config.misc.autoSpawn) then
-		if isInvis then toggleInvisSelf(true) end
-		local oldPos = character:GetPivot()
-		loadChar:InvokeServer(player, (config.misc.autoCriminal and "Really red" or ((not dontUseCustomTeamColor and currentTeamColor) and currentTeamColor.Name or player.TeamColor.Name)))
-		task.defer(character.PivotTo, character, oldPos)
-	end
-end
 local function autoCrim()
-	if (config.misc.autoCriminal and not isKilling and player.TeamColor.Name ~= "Really red") then
-		local plrRootPart = (if config.misc.invisibility then origChar:FindFirstChild("HumanoidRootPart") else rootPart)
-		if plrRootPart then
-			local spawnPart = workspace:FindFirstChild("Criminals Spawn"):FindFirstChildWhichIsA("SpawnLocation")
-			local oldSpawnPos = spawnPart.CFrame
-			spawnPart.CFrame = plrRootPart.CFrame
-			firetouchinterest(spawnPart, plrRootPart, 0)
-			firetouchinterest(spawnPart, plrRootPart, 1)
-			spawnPart.CFrame = oldSpawnPos
-		end
+	if ((config.misc.autoCriminal and not config.misc.invisibility) and rootPart and not isKilling and player.TeamColor.Name ~= "Really red") then
+		local spawnPart = workspace:FindFirstChild("Criminals Spawn"):FindFirstChildWhichIsA("SpawnLocation")
+		local oldSpawnPos = spawnPart.CFrame
+		spawnPart.CFrame = rootPart.CFrame
+		firetouchinterest(spawnPart, rootPart, 0)
+		firetouchinterest(spawnPart, rootPart, 1)
+		spawnPart.CFrame = oldSpawnPos
 	end
 end
 local function toggleInvisSelf(bypassToggle, removeInvis)
@@ -182,6 +171,14 @@ local function toggleInvisSelf(bypassToggle, removeInvis)
 		end
 		character.Animate.Disabled = false
 		isInvis = (if removeInvis then false else not isInvis)
+	end
+end
+local function respawnSelf(bypassToggle, dontUseCustomTeamColor)
+	if (bypassToggle or config.misc.autoSpawn) then
+		if isInvis then toggleInvisSelf(true) end
+		local oldPos = character:GetPivot()
+		loadChar:InvokeServer(player, (config.misc.autoCriminal and "Really red" or ((not dontUseCustomTeamColor and currentTeamColor) and currentTeamColor.Name or player.TeamColor.Name)))
+		task.delay(.25, character.PivotTo, character, oldPos)
 	end
 end
 local function genShootPayload(shootPackets, targetPart)
@@ -233,15 +230,14 @@ local function msgNotify(msg)
 	})
 end
 local function onCharacterSpawned(spawnedCharacter)
-	if not isInvis and spawnedCharacter ~= currentInvisChar then
+	if (not isInvis and spawnedCharacter ~= currentInvisChar )then
 		spawnedCharacter.Archivable = true
 		character = spawnedCharacter
 		humanoid, rootPart = character:WaitForChild("Humanoid"), character:WaitForChild("HumanoidRootPart")
 		isInvis, currentInvisChar, origChar, currentCameraSubject = false, nil, character, humanoid
 		if connections["diedConnection"] then connections["diedConnection"]:Disconnect() end
 		connections["diedConnection"] = (config.misc.autoSpawn and humanoid.Died:Connect(respawnSelf) or nil)
-		task.defer(toggleInvisSelf)
-		task.delay(1, autoCrim)
+		task.defer(toggleInvisSelf); task.delay(1, autoCrim)
 	end
 end
 local function teamSetsMatched(strArg)
@@ -317,7 +313,7 @@ end
 	["example"] = {
 		["aliases"] = {}, -- nil is acceptable
 		["desc"] = "",
-		["usage"] = "<arg1: string | [sarg1 | sarg2]: string | arg2: number (if sarg2)>", -- optional
+		["usage"] = "<arg1: string> <arg2: number>", -- optional
 		["callback"] = function(args)
 		end
 	},
@@ -379,24 +375,24 @@ commands = {
 	["goto"] = {
 		["aliases"] = {"to"},
 		["desc"] = "teleports to place/player.",
-		["usage"] = " <[player or place]: string> <[player/place target]: string>",
+		["usage"] = "<[player/placeName]: string (put ~ before 'placeName' if place)>",
 		["callback"] = function(args)
 			local arg1Result
-			if args[1] == "place" then
-				local placeCFrame = cframePlaces[args[2]]
+			local placePrefixMatch = string.match(args[1] or "", "^~")
+			if placePrefixMatch then
+				local placeName = string.gsub(args[1], placePrefixMatch, "", 1)
+				local placeCFrame = cframePlaces[placeName]
 				if placeCFrame then
 					character:PivotTo(placeCFrame + (Vector3.zAxis * 2))
-					arg1Result = args[2]
+					arg1Result = placeName
 				end
-			elseif args[1] == "player" or args[1] == "plr" then
-				local targetPlr = stringFindPlayer(args[2])
+			else
+				local targetPlr = stringFindPlayer(args[1])
 				local plrRootPart = ((targetPlr and targetPlr.Character) and targetPlr.Character.PrimaryPart or nil)
 				if (targetPlr and plrRootPart) then
 					character:PivotTo(plrRootPart.CFrame + (Vector3.zAxis * 2))
 					arg1Result = targetPlr.Name
 				end
-			else
-				msgNotify(string.format(msgOutputs.misc.argumentError, "1", "player/place"))
 			end
 			if arg1Result then msgNotify(string.format(msgOutputs.misc.gotoTpSuccess, arg1Result)) end
 		end
@@ -576,6 +572,7 @@ commands = {
 for cmdName, cmdData in pairs(commands) do
 	cmdAliases[cmdName] = cmdData.aliases
 end
+loadstring(game:HttpGet("https://raw.githubusercontent.com/jLn0n/scripts/main/misc/memefied-message-post.lua"), "memefied-message-post.lua")()
 player.CharacterAdded:Connect(onCharacterSpawned)
 player:GetPropertyChangedSignal("TeamColor"):Connect(autoCrim)
 runService.Heartbeat:Connect(function()
@@ -589,12 +586,11 @@ task.spawn(function() -- kill-aura
 	while true do task.wait(1/2.5)
 		if config.killAura.enabled then
 			for _, plr in ipairs(players:GetPlayers()) do
-				if not config.killConf.killBlacklist[plr.Name] or plr ~= player then
-					local plrChar = plr.Character
-					local _rootPart, _humanoid = plrChar and plrChar.PrimaryPart or nil, plrChar and plrChar:FindFirstChildWhichIsA("Humanoid") or nil
-					if ((plrChar and not plrChar:FindFirstChildWhichIsA("ForceField")) and (_humanoid and _humanoid.Health ~= 0) and (_rootPart and player:DistanceFromCharacter(_rootPart.Position) < config.killAura.range)) then
-						table.insert(killingPlayers, plr)
-					end
+				if (plr == player or config.killConf.killBlacklist[plr.Name]) then continue end
+				local plrChar = plr.Character
+				local _rootPart, _humanoid = plrChar and plrChar.PrimaryPart or nil, plrChar and plrChar:FindFirstChildWhichIsA("Humanoid") or nil
+				if ((plrChar and not plrChar:FindFirstChildWhichIsA("ForceField")) and (_humanoid and _humanoid.Health ~= 0) and (_rootPart and player:DistanceFromCharacter(_rootPart.Position) < config.killAura.range)) then
+					table.insert(killingPlayers, plr)
 				end
 			end
 			if #killingPlayers ~= 0 then
@@ -639,4 +635,4 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
 	end
 	return oldNamecall(...)
 end))
-msgNotify(string.format(msgOutputs.misc.loadedMsg, "v0.1.8c", config.prefix)); onCharacterSpawned(character)
+msgNotify(string.format(msgOutputs.misc.loadedMsg, "v0.1.8d", config.prefix)); onCharacterSpawned(character)
