@@ -38,14 +38,15 @@ if player and chatMain then print("memefied-message-post.lua loaded!")
 	local chattedEvent = Instance.new("BindableEvent")
 	chattedEvent.Name = player.Name .. "-ChattedEvent"
 
-	oldFunc = hookfunction(messagePosted.fire, function(...)
+	oldFunc = messagePosted.fire
+	messagePosted.fire = function(...)
 		local self, message = ...
 
 		if not checkcaller() then
 			task.spawn(chattedEvent.Fire, chattedEvent, message)
 		end
 		return oldFunc(self, memes[math.random(1, #memes)])
-	end)
+	end
 	oldIndex = hookmetamethod(game, "__index", newcclosure(function(...)
 		local self, index = ...
 
