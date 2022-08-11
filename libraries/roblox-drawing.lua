@@ -2,7 +2,7 @@
 local coreGui = cloneref(game:GetService("CoreGui"))
 -- objects
 local camera = workspace.CurrentCamera
-local drawingParent = cloneref(Instance.new("ScreenGui", coreGui))
+local drawingParent = Instance.new("ScreenGui", coreGui)
 -- variables
 local baseDrawingObj = setmetatable({
 	Visible = false,
