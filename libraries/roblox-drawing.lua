@@ -254,6 +254,16 @@ function Drawing.new(type)
 					squareFrame.BorderColor3 = value
 				end
 				squareObj[index] = value
+			end,
+			__index = function(self, index)
+				if index == "Remove" then
+					return function()
+						squareFrame:Destroy()
+						squareObj.Remove(self)
+						return squareObj:Remove()
+					end
+				end
+				return squareObj[index]
 			end
 		})
 	end
