@@ -121,7 +121,7 @@ function Drawing.new(type)
 				if index == "Radius" then
 					circleFrame.Size = UDim2.fromOffset(value, value)
 				elseif index == "Filled" then
-					circleFrame.BackgroundTransparency = (if value then 0 else .8)
+					circleFrame.BackgroundTransparency = (if value then 0 else circleObj.Transparency)
 				elseif index == "Position" then
 					circleFrame.Position = UDim2.fromOffset(value.X, value.Y)
 				elseif index == "Visible" then
@@ -129,7 +129,7 @@ function Drawing.new(type)
 				elseif index == "ZIndex" then
 					circleFrame.ZIndex = value
 				elseif index == "Transparency" then
-					circleFrame.BackgroundTransparency = value
+					circleFrame.BackgroundTransparency = (if circleObj.Filled then 0 else value)
 				elseif index == "Color" then
 					circleFrame.BackgroundColor3 = value
 				end
@@ -223,7 +223,7 @@ function Drawing.new(type)
 		} + baseDrawingObj)
 
 		local squareFrame = Instance.new("Frame")
-		squareFrame.AnchorPoint = (Vector2.one * .5)
+		--squareFrame.AnchorPoint = (Vector2.one * .5)
 		squareFrame.BorderMode = Enum.BorderMode.Outline
 
 		squareFrame.BorderSizePixel = 0
@@ -235,7 +235,7 @@ function Drawing.new(type)
 				if not squareObj[index] then return end
 
 				if index == "Filled" then
-					squareFrame.BackgroundTransparency = (if value then squareObj.Transparency else 1)
+					squareFrame.BackgroundTransparency = (if value then 1 else squareObj.Transparency)
 				elseif index == "Thickness" then
 					squareFrame.BorderSizePixel = value
 				elseif index == "Size" then
@@ -247,7 +247,7 @@ function Drawing.new(type)
 				elseif index == "ZIndex" then
 					squareFrame.ZIndex = value
 				elseif index == "Transparency" then
-					squareFrame.BackgroundTransparency = value
+					squareFrame.BackgroundTransparency = (if squareObj.Filled then 1 else value)
 				elseif index == "Color" then
 					squareFrame.BackgroundColor3 = value
 					squareFrame.BorderColor3 = value
@@ -268,4 +268,5 @@ function Drawing.new(type)
 	end
 end
 
+getgenv().Drawing = Drawing
 return Drawing
