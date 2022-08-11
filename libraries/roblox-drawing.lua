@@ -2,7 +2,8 @@
 local coreGui = cloneref(game:GetService("CoreGui"))
 -- objects
 local camera = workspace.CurrentCamera
-local drawingParent = Instance.new("ScreenGui", coreGui)
+local drawingParent = Instance.new("ScreenGui")
+drawingParent.Parent = coreGui.RobloxGui
 -- variables
 local baseDrawingObj = setmetatable({
 	Visible = false,
