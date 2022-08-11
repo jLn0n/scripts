@@ -1,12 +1,12 @@
 -- services
-local coreGui = cloneref(game:GetService("CoreGui"))
+local coreGui = game:GetService("CoreGui")
 -- objects
 local camera = workspace.CurrentCamera
 local drawingParent = Instance.new("ScreenGui")
 drawingParent.Parent = coreGui.RobloxGui
 -- variables
 local baseDrawingObj = setmetatable({
-	Visible = false,
+	Visible = true,
 	ZIndex = 1,
 	Transparency = 0,
 	Color = Color3.new(),
@@ -26,7 +26,7 @@ local baseDrawingObj = setmetatable({
 -- main
 local Drawing = {}
 Drawing.Fonts = {
-
+	UI = 0
 }
 
 function Drawing.new(type)
@@ -47,7 +47,6 @@ function Drawing.new(type)
 		lineFrame.BackgroundTransparency = lineObj.Transparency
 
 		lineFrame.Parent = drawingParent
-
 		return setmetatable({}, {
 			__newindex = function(_, index, value)
 				if not lineObj[index] then return end
@@ -116,7 +115,6 @@ function Drawing.new(type)
 		circleFrame.Size = UDim2.fromOffset(circleObj.Radius, circleObj.Radius)
 
 		circleFrame.Parent, uiCorner.Parent = drawingParent, circleFrame
-
 		return setmetatable({}, {
 			__newindex = function(_, index, value)
 				if not circleObj[index] then return end
@@ -171,7 +169,6 @@ function Drawing.new(type)
 		textLabel.TextTransparency = (1 - textObj.Transparency)
 
 		textLabel.Parent = drawingParent
-
 		return setmetatable({}, {
 			__newindex = function(_, index, value)
 				if not textObj[index] then return end
@@ -211,6 +208,8 @@ function Drawing.new(type)
 						textObj.Remove(self)
 						return textObj:Remove()
 					end
+				elseif index == "TextBounds" then
+					return textLabel.TextBounds
 				end
 				return textObj[index]
 			end
@@ -231,7 +230,6 @@ function Drawing.new(type)
 		squareFrame.Visible = squareObj.Visible
 
 		squareFrame.Parent = drawingParent
-
 		return setmetatable({}, {
 			__newindex = function(_, index, value)
 				if not squareObj[index] then return end
