@@ -111,7 +111,7 @@ function Drawing.new(type)
 		circleFrame.ZIndex = circleObj.ZIndex
 		circleFrame.BackgroundTransparency = circleObj.Transparency
 
-		uiCorner.CornerRadius = UDim2.fromScale(1, 0)
+		uiCorner.CornerRadius = UDim.new(1, 0)
 		circleFrame.Size = UDim2.fromOffset(circleObj.Radius, circleObj.Radius)
 
 		circleFrame.Parent, uiCorner.Parent = drawingParent, circleFrame
