@@ -70,7 +70,7 @@ local function getNearestPlrByCursor()
 			end
 		end
 	end
-	return (if nearestPlrData.aimPart then nearestPlrData else nil)
+	return (nearestPlrData.aimPart and nearestPlrData or nil)
 end
 -- main
 shared.executed = true
