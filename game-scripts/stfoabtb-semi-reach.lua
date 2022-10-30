@@ -34,7 +34,6 @@ if shared.executed then return end
 -- config
 shared.fov = (shared.fov or 175) -- mouse fov
 shared.distance = (shared.distance or 15) -- plrchar distance to targetchar
-shared.visibleCheck = (shared.visibleCheck or true)
 -- services
 local inputService = game:GetService("UserInputService")
 local players = game:GetService("Players")
@@ -50,20 +49,17 @@ local function checkPlr(plrArg)
 	local plrHumanoid, plrTPart = (plrChar and plrChar:FindFirstChild("Humanoid")), (plrChar and plrChar:FindFirstChild("Head"))
 	return plrArg ~= player and (plrChar and (plrHumanoid and plrHumanoid.Health ~= 0)), plrTPart
 end
-local function inLineOfSite(originPos, ...)
-	return #camera:GetPartsObscuringTarget({originPos}, {camera, player.Character, ...}) == 0
-end
 local function getNearestPlrByCursor()
 	local nearestPlrData = {aimPart = nil, dist = math.huge}
 
 	for _, plr in players:GetPlayers() do
 		local passed, plrTPart = checkPlr(plr)
 		if not (passed and plrTPart) then continue end
-		local posVec3, onScreen = camera:WorldToViewportPoint(plrTPart.Position)
+		local posVec3 = camera:WorldToViewportPoint(plrTPart.Position)
 		local fovDist = (inputService:GetMouseLocation() - Vector2.new(posVec3.X, posVec3.Y)).Magnitude
 		local charDist = ((plr.Character and plr.Character.PrimaryPart) and (plrChar.PrimaryPart.Position - plr.Character.PrimaryPart.Position).Magnitude or nil)
 
-		if checkPlr(plr) and (not shared.visibleCheck or (onScreen and inLineOfSite(plrTPart.Position, plr.Character))) then
+		if checkPlr(plr) then
 			if ((fovDist <= shared.fov) and (fovDist < nearestPlrData.dist)) and (charDist and charDist <= shared.distance) then
 				nearestPlrData.aimPart = plrTPart
 				nearestPlrData.dist = fovDist
