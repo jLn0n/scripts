@@ -76,7 +76,7 @@ end
 shared.executed = true
 runService.Heartbeat:Connect(function()
 	plrChar = player.Character
-	sword = (if plrChar then plrChar:FindFirstChildWhichIsA("Tool") else nil)
+	sword = (plrChar and plrChar:FindFirstChildWhichIsA("Tool") or nil)
 	if not (plrChar and sword) then return end
 	local nearestPlr = getNearestPlrByCursor()
 
