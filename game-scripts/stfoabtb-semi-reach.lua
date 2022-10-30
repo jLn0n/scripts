@@ -29,12 +29,12 @@
 	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --]]
--- config
-shared.fov = 175 -- mouse fov
-shared.distance = 15 -- plrchar distance to targetchar
-shared.visibleCheck = true
 -- init
 if shared.executed then return end
+-- config
+shared.fov = (shared.fov or 175) -- mouse fov
+shared.distance = (shared.distance or 15) -- plrchar distance to targetchar
+shared.visibleCheck = (shared.visibleCheck or true)
 -- services
 local inputService = game:GetService("UserInputService")
 local players = game:GetService("Players")
@@ -74,7 +74,6 @@ local function getNearestPlrByCursor()
 end
 -- main
 shared.executed = true
-
 runService.Heartbeat:Connect(function()
 	plrChar = player.Character
 	sword = (if plrChar then plrChar:FindFirstChildWhichIsA("Tool") else nil)
