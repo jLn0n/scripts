@@ -61,7 +61,7 @@ local function getNearestPlrByCursor()
 		if not (passed and plrTPart) then continue end
 		local posVec3, onScreen = camera:WorldToViewportPoint(plrTPart.Position)
 		local fovDist = (inputService:GetMouseLocation() - Vector2.new(posVec3.X, posVec3.Y)).Magnitude
-		local charDist = if (plr.Character and plr.Character.PrimaryPart) then (plrChar.PrimaryPart.Position - plr.Character.PrimaryPart.Position).Magnitude else nil
+		local charDist = ((plr.Character and plr.Character.PrimaryPart) and (plrChar.PrimaryPart.Position - plr.Character.PrimaryPart.Position).Magnitude or nil)
 
 		if checkPlr(plr) and (not shared.visibleCheck or (onScreen and inLineOfSite(plrTPart.Position, plr.Character))) then
 			if ((fovDist <= shared.fov) and (fovDist < nearestPlrData.dist)) and (charDist and charDist <= shared.distance) then
