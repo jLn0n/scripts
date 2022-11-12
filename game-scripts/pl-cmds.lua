@@ -230,14 +230,15 @@ local function msgNotify(msg)
 	})
 end
 local function onCharacterSpawned(spawnedCharacter)
-	if (isInvis and spawnedCharacter == currentInvisChar) then return end
-	spawnedCharacter.Archivable = true
-	character = spawnedCharacter
-	humanoid, rootPart = character:WaitForChild("Humanoid"), character:WaitForChild("HumanoidRootPart")
-	isInvis, currentInvisChar, origChar, currentCameraSubject = false, nil, character, humanoid
-	if connections["diedConnection"] then connections["diedConnection"]:Disconnect() end
-	connections["diedConnection"] = (config.misc.autoSpawn and humanoid.Died:Connect(respawnSelf) or nil)
-	task.defer(toggleInvisSelf); task.delay(1, autoCrim)
+	if (not isInvis and spawnedCharacter ~= currentInvisChar) then
+		spawnedCharacter.Archivable = true
+		character = spawnedCharacter
+		humanoid, rootPart = character:WaitForChild("Humanoid"), character:WaitForChild("HumanoidRootPart")
+		isInvis, currentInvisChar, origChar, currentCameraSubject = false, nil, character, humanoid
+		if connections["diedConnection"] then connections["diedConnection"]:Disconnect() end
+		connections["diedConnection"] = (config.misc.autoSpawn and humanoid.Died:Connect(respawnSelf) or nil)
+		task.defer(toggleInvisSelf); task.delay(1, autoCrim)
+	end
 end
 local function teamSetsMatched(strArg)
 	return (
