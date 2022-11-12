@@ -160,7 +160,7 @@ local function toggleInvisSelf(bypassToggle, removeInvis)
 			currentInvisChar = nil
 		elseif not isInvis then
 			currentInvisChar = character:Clone()
-			character:PivotTo(CFrame.identity + (Vector3.yAxis * (math.pi * 1e6)))
+			character:PivotTo(CFrame.identity + (Vector3.yAxis * (math.pi * 1e5)))
 			task.wait(.25)
 			character.Parent = game:GetService("Lighting")
 			currentInvisChar.Name, currentInvisChar.Parent = "invis-" .. currentInvisChar.Name, workspace
