@@ -24,12 +24,16 @@ resetBindableConnection = resetBindable.Event:Connect(function()
 	starterGui:SetCore("ResetButtonCallback", true)
 	resetBindableConnection:Disconnect()
 
-	character:Destroy()
-	local daModel = Instance.new("Model")
-	local _daModelHumanoid = Instance.new("Humanoid")
-	_daModelHumanoid.Parent = daModel
-	player.Character = daModel
+	if player.Character == character then
+		character:Destroy()
+		local daModel = Instance.new("Model")
+		local _daModelHumanoid = Instance.new("Humanoid")
+		_daModelHumanoid.Parent = daModel
+		player.Character = daModel
 
-	task.delay(players.RespawnTime, destroyFunc, daModel)
+		task.delay(players.RespawnTime, destroyFunc, daModel)
+	else
+		player.Character:BreakJoints()
+	end
 end)
 starterGui:SetCore("ResetButtonCallback", resetBindable)
