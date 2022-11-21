@@ -5,7 +5,7 @@ local starterGui = game:GetService("StarterGui")
 local player = players.LocalPlayer
 local character = player.Character
 local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-local head, torso = character:FindFirstChild("Head"), character:FindFirstChild("Torso")
+local head, neck = character:FindFirstChild("Head"), character:FindFirstChild("Neck", true)
 local resetBindable = Instance.new("BindableEvent")
 -- variables
 local destroyFunc, resetBindableConnection = character.Destroy, nil
@@ -17,7 +17,7 @@ task.wait(players.RespawnTime + .05)
 
 humanoid.BreakJointsOnDeath = false
 humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-task.defer(destroyFunc, (humanoid.RigType == Enum.HumanoidRigType.R6 and torso.Neck or head.Neck)) -- destroys the weld of the head first for some magic
+task.defer(destroyFunc, neck) -- destroys the weld of the head first for some magic
 task.defer(destroyFunc, head) -- and we destroy the head
 
 resetBindableConnection = resetBindable.Event:Connect(function()
