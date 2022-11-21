@@ -17,7 +17,7 @@ task.wait(players.RespawnTime + .05)
 
 humanoid.BreakJointsOnDeath = false
 humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-task.defer(destroyFunc, (if humanoid.RigType == Enum.HumanoidRigType.R6 then torso.Neck else head.Neck)) -- destroys the weld of the head first for some magic
+task.defer(destroyFunc, (humanoid.RigType == Enum.HumanoidRigType.R6 and torso.Neck or head.Neck)) -- destroys the weld of the head first for some magic
 task.defer(destroyFunc, head) -- and we destroy the head
 
 resetBindableConnection = resetBindable.Event:Connect(function()
