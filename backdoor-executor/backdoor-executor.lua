@@ -20,7 +20,7 @@ local msgOutputs = {
 	["printEvent"] = "\n Event: %s\n Type: %s",
 	["outdatedCache"] = "This game [%s] cache doesn't work, it might be outdated."
 }
-local testSource = [[local daValue = Instance.new("StringValue") daValue.Name, daValue.Parent, daValue.Value = game.PlaceId, workspace, "%s"]]
+local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(5, daValue.Destroy, daValue)]]
 local scannedEvents = table.create(0)
 -- functions
 local function sendNotification(text)
@@ -83,12 +83,13 @@ local function initializeEventObj(params)
 end
 
 local function onAttached(eventObj, params)
+	if not eventObj then return end
 	print(string.format(msgOutputs.attached, eventObj:GetFullName(), eventObj.ClassName))
 	initializeEventObj(params or {
+		["foundBackdoor"] = true,
 		["instance"] = eventObj,
 	})
 	sendNotification("Attached!")
-	execScript("workspace:FindFirstChild(game.PlaceId):Destroy()")
 
 	loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customExecution = true,
@@ -110,8 +111,8 @@ local function findBackdoors()
 			pcall(task.spawn, eventFunc, object, string.format(testSource, objectPath))
 
 			local execResult = workspace:FindFirstChild(game.PlaceId)
-			if execResult and execResult.Value == objectPath then
-				onAttached(object)
+			if execResult and execResult.Value ~= "" then
+				onAttached(pathToInstance(execResult.Value))
 				break
 			end
 
