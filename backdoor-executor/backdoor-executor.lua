@@ -9,6 +9,7 @@ local configRaw = (
 		game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
 )
 local eventInfo = {
+	["foundBackdoor"] = false,
 	["instance"] = nil,
 	["args"] = {"source"},
 	["argSrcIndex"] = 1,
@@ -139,13 +140,14 @@ do -- "initialization"?
 end
 do -- backdoor finding
 	sendNotification("Press F9 to see the remotes being scanned.")
-	local placeCacheData = config.cachedPlaces[game.PlaceId]
+	local placeCacheData = if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil
 
 	if placeCacheData then
 		local eventObj = pathToInstance(placeCacheData.Path)
 
 		if eventObj then
 			onAttached(eventObj, {
+				["foundBackdoor"] = true,
 				["instance"] = eventObj,
 				["srcFunc"] = placeCacheData.SourceFunc,
 				["args"] = placeCacheData.Args,
@@ -154,11 +156,12 @@ do -- backdoor finding
 		else
 			warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
 		end
-	else
+	end
+	if (not placeCacheData or not eventInfo.foundBackdoor) then -- scan first
 		findBackdoors()
 	end
 
-	if not eventInfo.instance then
+	if not eventInfo.foundBackdoor then -- if no backdoor found
 		print("No backdoor(s) can be found here!")
 		sendNotification("No backdoor(s) can be found here!")
 	end
