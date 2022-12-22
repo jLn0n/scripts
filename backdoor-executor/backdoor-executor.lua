@@ -43,6 +43,7 @@ local function pathToInstance(strPath)
 end
 
 local function isRemoteAllowed(object)
+	if not object then return end
 	local objectFullName = object:GetFullName()
 
 	if (config.blacklistSettings.eventNames[object.Name] or config.blacklistSettings.eventParentNames[object.Parent.Name]) or
