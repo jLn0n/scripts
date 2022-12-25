@@ -3,7 +3,7 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 4, -- don't touch this!
+	["configVer"] = 4.1, -- don't touch this!
 	-- tweaks
 	["redirectRemote"] = false, -- [BETA] uses a custom remote for server-side execution
 
@@ -16,7 +16,7 @@ return {
 		["AdminRemotes"] = function(remoteObj)
 			local remoteObjPath = remoteObj:GetFullName()
 
-			return string.find(remoteObjPath, "HDAdminClient") or string.find(remoteObjPath, "Basic Admin Essentials")
+			return remoteObj:IsDescendantOf(game:GetService("ReplicatedStorage")) and (string.find(remoteObjPath, "HDAdminClient") or string.find(remoteObjPath, "Basic Admin Essentials"))
 		end,
 		["AdonisRemotes"] = function(remoteObj)
 			return (
@@ -25,7 +25,7 @@ return {
 			)
 		end,
 		["RobloxReplicatedStorage"] = function(remoteObj)
-			return (if remoteObj.Parent then remoteObj.Parent:IsA("RobloxReplicatedStorage") else nil)
+			return remoteObj:IsDescendantOf(game:GetService("RobloxReplicatedStorage"))
 		end
 	},
 
