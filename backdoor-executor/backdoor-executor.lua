@@ -168,7 +168,7 @@ local function onAttached(remoteObj, params)
 
 	if config.redirectRemote then
 		local newRemote = game:GetService("JointsService"):FindFirstChildWhichIsA("RemoteEvent")
-		if not (newRemote and newRemote:GetAttribute("bexeremote")) then
+		if not newRemote or not newRemote:GetAttribute("bexeremote") then
 			execScript("require(11906423264)(%userid%)")
 			newRemote = game:GetService("JointsService"):WaitForChild("bexe-remote")
 		end
