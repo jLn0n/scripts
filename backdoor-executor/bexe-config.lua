@@ -3,9 +3,10 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 4.2, -- don't touch this!
+	["configVer"] = 5, -- don't touch this!
 	-- tweaks
-	["redirectRemote"] = false, -- [BETA] uses a custom remote for server-side execution
+	["redirectOutput"] = true, -- [BETA] redirects output to console
+	["redirectRemote"] = true, -- [BETA] uses a custom remote for server-side execution
 
 	-- customization
 	["autoExec"] = { -- scripts that executes after backdoor is found
@@ -36,7 +37,8 @@ return {
 
 	["scriptMacros"] = { -- prefixed as "%macro%" | example %username% -> "Roblox"
 		["username"] = player.Name,
-		["userid"] = player.UserId
+		["userid"] = player.UserId,
+		["placeid"] = game.PlaceId
 	},
 
 	["cachedPlaces"] = { -- backdoor remote configuration cache thing

