@@ -3,7 +3,7 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 4.1, -- don't touch this!
+	["configVer"] = 4.2, -- don't touch this!
 	-- tweaks
 	["redirectRemote"] = false, -- [BETA] uses a custom remote for server-side execution
 
@@ -24,9 +24,14 @@ return {
 				(remoteObj.Name == "__FUNCTION" and remoteObj.Parent:IsA("RemoteEvent") and remoteObj.Parent.Parent:IsA("ReplicatedStorage"))
 			)
 		end,
+		["RespawnRemotes"] = function(remoteObj)
+			local remoteObjName = string.lower(remoteObj.Name)
+
+			return (string.find(remoteObjName, "respawn"))
+		end,
 		["RobloxReplicatedStorage"] = function(remoteObj)
 			return remoteObj:IsDescendantOf(game:GetService("RobloxReplicatedStorage"))
-		end
+		end,
 	},
 
 	["scriptMacros"] = { -- prefixed as "%macro%" | example %username% -> "Roblox"
@@ -42,6 +47,10 @@ return {
 		[6879465970] = {
 			["Path"] = "ReplicatedStorage.RemoteEvent",
 			["Args"] = {"source"}
+		},
+		[6664139112] = {
+			["Path"] = "ReplicatedStorage.Core.Communication.RemoteEvent",
+			["Args"] = {"Execute", "source"}
 		},
 	},
 }
