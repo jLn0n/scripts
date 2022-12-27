@@ -3,7 +3,7 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 5, -- don't touch this!
+	["configVer"] = 5.1, -- don't touch this!
 	-- tweaks
 	["redirectOutput"] = false, -- [BETA] redirects output to console
 	["redirectRemote"] = false, -- [BETA] uses a custom remote for server-side execution
@@ -29,6 +29,11 @@ return {
 			local remoteObjName = string.lower(remoteObj.Name)
 
 			return (string.find(remoteObjName, "respawn"))
+		end,
+		["SkidCannonRemotes"] = function(remoteObj)
+			local remoteObjPath = remoteObj:GetFullName()
+
+			return (string.find(remoteObjPath, "JointsService") and (string.find(remoteObjPath, "Lightning Cannon") or string.find(remoteObjPath, " Cannon")))
 		end,
 		["RobloxReplicatedStorage"] = function(remoteObj)
 			return remoteObj:IsDescendantOf(game:GetService("RobloxReplicatedStorage"))
