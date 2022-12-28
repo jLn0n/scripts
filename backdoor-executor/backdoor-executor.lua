@@ -107,7 +107,7 @@ end
 local function generateRandString(lenght)
 	local result = ""
 
-	for iter = 1, lenght do
+	for _ = 1, lenght do
 		local randInteger = math.random(1, #stringList)
 		result ..= string.sub(stringList, randInteger, randInteger)
 	end
@@ -195,25 +195,22 @@ local function execScript(source, _sourceName, noRedirectOutput)
 		connection = jointsService.ChildAdded:Connect(function(object)
 			if object.Name == nonce then connection:Disconnect()
 				local rawStdout = object:GetAttribute("stdout")
+				local jsonConvertSucc, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
 
-				if typeof(rawStdout) == "string" then
-					local succ, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
+				if jsonConvertSucc and typeof(stdout) == "table" then
+					for _, output in stdout do
+						local outputType, timestamp = output[1], output[2]
+						output = table.concat(output, " ", 3)
 
-					if succ then
-						for _, output in stdout do
-							local outputType, timestamp = output[1], output[2]
-							output = table.concat(output, " ", 3)
-
-							execGuiAPI.console.createOutput(
-								output,
-								(if outputType == "print" then
-									Enum.MessageType.MessageOutput
-								elseif outputType == "warn" then
-									Enum.MessageType.MessageWarning
-								else nil),
-								timestamp
-							)
-						end
+						execGuiAPI.console.createOutput(
+							output,
+							(if outputType == "print" then
+								Enum.MessageType.MessageOutput
+							elseif outputType == "warn" then
+								Enum.MessageType.MessageWarning
+							else nil),
+							timestamp
+						)
 					end
 				end
 
@@ -279,11 +276,10 @@ local function findBackdoors()
 	local connection
 	connection = jointsService.ChildAdded:Connect(function(object)
 		if object:IsA("StringValue") and
-			object.Name == tostring(game.PlaceId) and
+			object.Name == nonce and
 			object.Value ~= ""
-		then
-			onAttached(pathToInstance(object.Value))
-			connection:Disconnect()
+		then connection:Disconnect()
+			task.spawn(onAttached, pathToInstance(object.Value))
 		end
 	end)
 
