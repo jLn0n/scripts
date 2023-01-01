@@ -1,5 +1,5 @@
 --[[
-	pl-cmds.lua, v0.1.9a
+	pl-cmds.lua, v0.1.9b
 	spagetti code go brr
 	https://scriptblox.com/script/Prison-Life-(Cars-fixed!)-plcmds.lua-1140
 --]]
@@ -273,10 +273,11 @@ local function msgNotify(msg)
 	})
 end
 local function onCharacterSpawned(spawnedCharacter)
+	task.wait()
 	if (not isInvis and spawnedCharacter ~= currentInvisChar) then
 		spawnedCharacter.Archivable = true
 		character = spawnedCharacter
-		humanoid, rootPart = character:FindFirstChild("Humanoid"), character:FindFirstChild("HumanoidRootPart")
+		humanoid, rootPart = spawnedCharacter:WaitForChild("Humanoid"), spawnedCharacter:WaitForChild("HumanoidRootPart")
 		isInvis, currentInvisChar, origChar, currentCameraSubject = false, nil, character, humanoid
 		if connections["diedConnection"] then connections["diedConnection"]:Disconnect() end
 		connections["diedConnection"] = (config.misc.autoSpawn and humanoid.Died:Connect(respawnSelf) or nil)
@@ -764,4 +765,4 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
 	end
 	return oldNamecall(self, ...)
 end))
-msgNotify(string.format(msgOutputs.misc.loadedMsg, "v0.1.9a", config.prefix)); onCharacterSpawned(character)
+msgNotify(string.format(msgOutputs.misc.loadedMsg, "v0.1.9b", config.prefix)); onCharacterSpawned(character)
