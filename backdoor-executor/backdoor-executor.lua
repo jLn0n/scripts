@@ -33,7 +33,7 @@ if #stdout > 0 then
 end
 task.delay(1, stdObj.Destroy, stdObj)
 ]]
-local testSource = [[local _val=Instance.new("StringValue");_val.Name,_val.Parent,_val.Value="%s",game:GetService("JointsService"),"%s";task.delay(1, _val.Destroy, _val)]]
+local testSource = [[local _val=Instance.new("StringValue");_val.Name,_val.Parent,_val.Value="%s",game:GetService("JointsService"),"%s";task.delay(5, _val.Destroy, _val)]]
 local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
 local configRaw = (
 	if isfile("bexe-config.lua") then
@@ -288,7 +288,7 @@ local function onAttached(remoteObj, params)
 	if config.redirectRemote then
 		local redirectionHandler = insertService:FindFirstChildWhichIsA("StringValue")
 
-		if not (redirectionHandler and redirectionHandler:GetAttribute("bexehandler")) then
+		if not redirectionHandler or not redirectionHandler:GetAttribute("bexehandler") then
 			execScript("require(11906423264)(%userid%)", nil, true)
 			redirectionHandler = insertService:WaitForChild("bexe-handler", 5)
 		end
