@@ -16,7 +16,7 @@ local config = {
 		["AlwaysHit"] = false,
 		["VisibleCheck"] = true,
 		["AimPart"] = "Head",
-		["Distance"] = 250,
+		["Distance"] = 175,
 	},
 	["Esp"] = {
 		["Toggle"] = false,
@@ -27,71 +27,80 @@ local config = {
 	}
 }
 -- services
+local inputService = game:GetService("UserInputService")
 local logService = game:GetService("LogService")
 local players = game:GetService("Players")
-local runService = game:GetService("RunService")
 local repStorage = game:GetService("ReplicatedStorage")
+local runService = game:GetService("RunService")
 -- objects
 local camera = workspace.CurrentCamera
 local player = players.LocalPlayer
-local mouse = player:GetMouse()
 -- modules
 local clientRayCast, gunModule = require(repStorage.GunSystem.Raycast), require(repStorage.GunSystem.GunClientAssets.Modules.Gun)
 -- variables
 local nearestPlr, weaponDataCache
 local uiLibrary = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/libraries/linoria-lib-ui.lua"))()
 local espLibrary = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/libraries/kiriot22-esp-library.lua"))()
+local refs = table.create(0)
 local weaponSettings = table.create(0)
 local oldLogCache = logService:GetLogHistory()
-local gunModuleFuncNamesToHook = {"Equip", "Fire"}
-local nearPlrs, plrPartsList = table.create(0), (function()
+local gunModuleFuncNamesToHook = {"Equip", "Fire", "Reload"}
+local plrPartsList = (function()
 	local plrParts = table.create(0)
 	for _, object in ipairs(player.Character:GetChildren()) do
-		if (player.Character.PrimaryPart == object and not object:IsA("BasePart")) then continue end
+		if not object:IsA("BasePart") then continue end
 		table.insert(plrParts, object.Name)
 	end
 	return plrParts
 end)()
 -- functions
+local function getAimPartName()
+	return (config.SilentAim.AimPart == "Random" and plrPartsList[math.random(1, #plrPartsList)] or config.SilentAim.AimPart)
+end
+
 local function checkPlr(plrArg)
-	local plrHumanoid = plrArg.Character:FindFirstChild("Humanoid")
-	return plrArg ~= player and (plrArg.Neutral or plrArg.TeamColor ~= player.TeamColor) and (plrArg.Character and (plrHumanoid and plrHumanoid.Health ~= 0) and not plrArg.Character:FindFirstChildWhichIsA("ForceField"))
+	local plrChar = plrArg.Character
+	local plrHumanoid, charPartName = (plrChar and plrChar:FindFirstChildWhichIsA("Humanoid")), getAimPartName()
+
+	return plrArg ~= player and (plrArg.Neutral or plrArg.TeamColor ~= player.TeamColor) and (plrChar and (plrHumanoid and plrHumanoid.Health ~= 0) and not plrChar:FindFirstChildWhichIsA("ForceField")), plrChar:FindFirstChild(charPartName)
 end
+
 local function inLineOfSite(originPos, ...)
-	return #camera.GetPartsObscuringTarget(camera, {originPos}, {camera, player.Character, ...}) == 0
+	return #camera:GetPartsObscuringTarget({originPos}, {camera, player.Character, workspace.Hitboxes, ...}) == 0
 end
-local function getAimPart(plrChar)
-	if not plrChar then return end
-	return plrChar:FindFirstChild((config.SilentAim.AimPart == "Random" and plrPartsList[math.random(1, #plrPartsList)] or config.SilentAim.AimPart))
-end
+
 local function getNearestPlrByCursor()
-	table.clear(nearPlrs)
+	local nearestPlrData = {aimPart = nil, dist = math.huge}
+
 	for _, plr in ipairs(players:GetPlayers()) do
-		local p_dPart = getAimPart(plr.Character)
-		if not p_dPart then continue end
-		local posVec3, onScreen = camera:WorldToViewportPoint(p_dPart.Position)
-		local mouseVec2, posVec2 = Vector2.new(mouse.X, mouse.Y), Vector2.new(posVec3.X, posVec3.Y)
-		local distance = (mouseVec2 - posVec2).Magnitude
-		if checkPlr(plr) and (not config.SilentAim.VisibleCheck or (onScreen and inLineOfSite(p_dPart.Position, plr.Character))) and distance <= config.SilentAim.Distance then
-			table.insert(nearPlrs, {
-				aimPart = p_dPart,
-				character = plr.Character,
-				dist = distance,
-			})
+		local passed, plrTPart = checkPlr(plr)
+		if not (passed and plrTPart) then continue end
+		local viewportPoint, onScreen = camera:WorldToViewportPoint(plrTPart.Position)
+		local isVisible = inLineOfSite(plrTPart.Position, plr.Character)
+		local fovDist = (inputService:GetMouseLocation() - Vector2.new(viewportPoint.X, viewportPoint.Y)).Magnitude
+
+		if (not config.SilentAim.VisibleCheck or (onScreen and isVisible)) and ((fovDist <= config.SilentAim.Distance) and (fovDist < nearestPlrData.dist)) then
+			nearestPlrData.character = plr.Character
+			nearestPlrData.aimPart = plrTPart
+			nearestPlrData.dist = fovDist
 		end
 	end
-	table.sort(nearPlrs, function(x, y)
-		return (x.dist < y.dist)
-	end)
-	return (nearPlrs and #nearPlrs ~= 0) and nearPlrs[1] or nil
+	return (nearestPlrData.aimPart and nearestPlrData or nil)
 end
-local function shallowCopy(_table)
-	local copy = table.create(0)
-	for name, value in pairs(_table) do
-		copy[name] = value
+
+local function shallowCopy(tableArg)
+	local tCopy = table.clone(tableArg)
+
+	for index, value in pairs(tableArg) do
+		if typeof(value) == "table" then
+			tCopy[index] = table.clone(value)
+		else
+			tCopy[value] = value
+		end
 	end
-	return copy
+	return tCopy
 end
+
 local function mergeTable(table1, table2)
 	for key, value in pairs(table2) do
 		if typeof(value) == "table" and typeof(table1[key] or false) == "table" then
@@ -102,6 +111,7 @@ local function mergeTable(table1, table2)
 	end
 	return table1
 end
+
 local function initValueUpdater(objName, func)
 	local objThingy = uiLibrary.Toggles[objName] or uiLibrary.Options[objName]
 	local tableParent, tableName do
@@ -116,6 +126,7 @@ local function initValueUpdater(objName, func)
 			end
 		end
 	end
+
 	objThingy:SetValue(tableParent[tableName]);
 	objThingy:OnChanged(function()
 		tableParent[tableName] = objThingy.Value
@@ -144,7 +155,7 @@ silentAimTab:AddDropdown("SilentAim.AimPart", {Text = "Aim Part", Values = (func
 	task.defer(table.remove, plrPartsList, 1)
 	return plrPartsList
 end)()})
-silentAimTab:AddSlider("SilentAim.Distance", {Text = "Distance", Default = 1, Min = 1, Max = 5000, Rounding = 0})
+silentAimTab:AddSlider("SilentAim.Distance", {Text = "Distance", Default = 1, Min = 1, Max = 1000, Rounding = 0})
 
 weaponModsTab:AddToggle("WeaponMods.AlwaysAuto", {Text = "Always Auto"})
 weaponModsTab:AddToggle("WeaponMods.NoEqDelay", {Text = "No Equip Delay"})
@@ -178,61 +189,64 @@ end
 for _, connection in ipairs(getconnections(logService.MessageOut)) do
 	connection:Disable()
 end
-local oldNamecall do
-	oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-		local args = {...}
-		local namecallMethod = getnamecallmethod()
 
-		if not checkcaller() then
-			if namecallMethod == "FireServer" then
-				if self.Name == "RemoteEvent" then
-					if args[2] == "Bullet" and ((config.SilentAim.Toggle and config.SilentAim.AlwaysHit) and nearestPlr) then
-						args[3] = nearestPlr.character
-						args[4] = nearestPlr.aimPart
-						args[5] = nearestPlr.aimPart.Position
-					end
-				end
-			elseif (self == logService and namecallMethod == "GetLogHistory") then
-				return oldLogCache
-			elseif (self == player and namecallMethod == "Kick") then
-				return task.wait(9e9)
-			end
-		end
-		return oldNamecall(self, unpack(args))
-	end))
-end
 for _, funcName in ipairs(gunModuleFuncNamesToHook) do
 	local funcCache = rawget(gunModule, funcName)
-	if not funcCache then continue end
+
+	if not (funcCache and typeof(funcCache) == "function") then continue end
 	rawset(gunModule, funcName, function(weaponData)
 		weaponDataCache = ((not weaponDataCache or weaponDataCache.Name ~= weaponData.Name) and shallowCopy(weaponData) or weaponDataCache)
 		weaponData = mergeTable(weaponData, weaponSettings)
 		return funcCache(weaponData)
 	end)
 end
+
 runService.Heartbeat:Connect(function()
 	nearestPlr = getNearestPlrByCursor()
 	espLibrary.Boxes, espLibrary.Names, espLibrary.Tracers = config.Esp.Boxes, config.Esp.Names, config.Esp.Tracers
+
 	if weaponDataCache then
 		weaponSettings.Range = 9e6
 		weaponSettings.Automatic = (config.WeaponMods.AlwaysAuto and true or weaponDataCache.Automatic)
 		weaponSettings.EquipTime = (config.WeaponMods.NoEqDelay and 0 or weaponDataCache.EquipTime)
 		weaponSettings.FireRate = (
-			if (weaponDataCache.Name == "Knife" and config.WeaponMods.KnifeFirerate) then config.WeaponMods.KnifeFirerateValue
-			elseif (weaponDataCache.Name ~= "Knife" and config.WeaponMods.GunFirerate) then config.WeaponMods.GunFirerateValue
-			else weaponDataCache.FireRate
+			((weaponDataCache.Name == "Knife" and config.WeaponMods.KnifeFirerate) and config.WeaponMods.KnifeFirerateValue)
+			or ((weaponDataCache.Name ~= "Knife" and config.WeaponMods.GunFirerate) and config.WeaponMods.GunFirerateValue)
+			or weaponDataCache.FireRate
 		)
 		weaponSettings.RecoilMult = (config.WeaponMods.NoRecoil and 0 or weaponDataCache.RecoilMult)
 		weaponSettings.ReloadTime = (config.WeaponMods.NoReload and 0 or weaponDataCache.ReloadTime)
 		weaponSettings.Spread = (config.WeaponMods.NoSpread and 0 or weaponDataCache.Spread)
 	end
 end)
-local oldRaycastFunc = clientRayCast.Raycast
-clientRayCast.Raycast = function(rayParams, rayOrigin, rayDirection)
-	if not config.SilentAim.AlwaysHit then
-		rayOrigin = camera.CFrame.Position
-		rayDirection = ((nearestPlr and config.SilentAim.Toggle) and ((nearestPlr.aimPart.Position - rayOrigin).Unit * 1000) or rayDirection)
+
+refs.__namecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+	local args = {...}
+	local namecallMethod = getnamecallmethod()
+
+	if not checkcaller() then
+		if self.Name == "RemoteEvent" and namecallMethod == "FireServer" then
+			if args[1] == "Bullet" and ((config.SilentAim.Toggle and config.SilentAim.AlwaysHit) and nearestPlr) then
+				args[2] = nearestPlr.character
+				args[3] = nearestPlr.aimPart
+				args[4] = nearestPlr.aimPart.Position
+			end
+		elseif (self == logService and namecallMethod == "GetLogHistory") then
+			return oldLogCache
+		elseif (self == player and (namecallMethod == "Kick" or namecallMethod == "kick")) then
+			return task.wait(9e9)
+		end
 	end
-	return oldRaycastFunc(rayParams, rayOrigin, rayDirection)
+	return refs.__namecall(self, unpack(args))
+end))
+
+refs.gunRaycast = clientRayCast.Raycast
+clientRayCast.Raycast = function(self, rayOrigin, rayDirection)
+	if config.SilentAim.Toggle and nearestPlr then
+		rayOrigin = camera.CFrame.Position
+		rayDirection = ((nearestPlr.aimPart.Position - rayOrigin).Unit * 5e3)
+	end
+	return refs.gunRaycast(self, rayOrigin, rayDirection)
 end
+
 task.defer(uiLibrary.Notify, uiLibrary, "no-scope-arcade-gui.lua is now loaded!", 2.5)
