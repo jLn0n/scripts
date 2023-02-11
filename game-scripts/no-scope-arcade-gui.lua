@@ -38,31 +38,24 @@ local player = players.LocalPlayer
 -- modules
 local clientRayCast, gunModule = require(repStorage.GunSystem.Raycast), require(repStorage.GunSystem.GunClientAssets.Modules.Gun)
 -- variables
-local nearestPlr, weaponDataCache
+local nearestPlr
 local uiLibrary = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/libraries/linoria-lib-ui.lua"))()
 local espLibrary = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/libraries/kiriot22-esp-library.lua"))()
 local refs = table.create(0)
-local weaponSettings = table.create(0)
+local weaponSettings, weaponDataCache = table.create(0), nil
 local oldLogCache = logService:GetLogHistory()
 local gunModuleFuncNamesToHook = {"Equip", "Fire", "Reload"}
-local plrPartsList = (function()
-	local plrParts = table.create(0)
-	for _, object in ipairs(player.Character:GetChildren()) do
-		if not object:IsA("BasePart") then continue end
-		table.insert(plrParts, object.Name)
-	end
-	return plrParts
-end)()
+local plrPartsList = {"Head", "UpperTorso", "Random"}
 -- functions
 local function getAimPartName()
-	return (config.SilentAim.AimPart == "Random" and plrPartsList[math.random(1, #plrPartsList)] or config.SilentAim.AimPart)
+	return (config.SilentAim.AimPart == "Random" and plrPartsList[math.random(1, #plrPartsList - 1)] or config.SilentAim.AimPart)
 end
 
 local function checkPlr(plrArg)
 	local plrChar = plrArg.Character
 	local plrHumanoid, charPartName = (plrChar and plrChar:FindFirstChildWhichIsA("Humanoid")), getAimPartName()
 
-	return plrArg ~= player and (plrArg.Neutral or plrArg.TeamColor ~= player.TeamColor) and (plrChar and (plrHumanoid and plrHumanoid.Health ~= 0) and not plrChar:FindFirstChildWhichIsA("ForceField")), plrChar:FindFirstChild(charPartName)
+	return plrArg ~= player and (plrArg.Neutral or plrArg.TeamColor ~= player.TeamColor) and (plrChar and (plrHumanoid and plrHumanoid.Health ~= 0) and not plrChar:FindFirstChildWhichIsA("ForceField")), (plrChar and plrChar:FindFirstChild(charPartName))
 end
 
 local function inLineOfSite(originPos, ...)
@@ -150,11 +143,7 @@ local creditsTab = tabbox4:AddTab("Credits")
 silentAimTab:AddToggle("SilentAim.Toggle", {Text = "Toggle"})
 silentAimTab:AddToggle("SilentAim.AlwaysHit", {Text = "Always Hit"})
 silentAimTab:AddToggle("SilentAim.VisibleCheck", {Text = "Visibility Check"})
-silentAimTab:AddDropdown("SilentAim.AimPart", {Text = "Aim Part", Values = (function()
-	table.insert(plrPartsList, 1, "Random")
-	task.defer(table.remove, plrPartsList, 1)
-	return plrPartsList
-end)()})
+silentAimTab:AddDropdown("SilentAim.AimPart", {Text = "Aim Part", Values = plrPartsList})
 silentAimTab:AddSlider("SilentAim.Distance", {Text = "Distance", Default = 1, Min = 1, Max = 1000, Rounding = 0})
 
 weaponModsTab:AddToggle("WeaponMods.AlwaysAuto", {Text = "Always Auto"})
@@ -175,6 +164,7 @@ espTab:AddLabel("Enemy Color"):AddColorPicker("Esp.EnemyColor", {Default = Color
 
 creditsTab:AddLabel("Linoria Hub for Linoria UI Library")
 creditsTab:AddLabel("Kiriot22 for the ESP Library")
+
 for objThingyName in pairs(mergeTable(uiLibrary.Toggles, uiLibrary.Options)) do
 	initValueUpdater(objThingyName, (objThingyName == "Esp.Toggle" and function(value)
 		espLibrary:Toggle(value)
@@ -216,7 +206,13 @@ runService.Heartbeat:Connect(function()
 		)
 		weaponSettings.RecoilMult = (config.WeaponMods.NoRecoil and 0 or weaponDataCache.RecoilMult)
 		weaponSettings.ReloadTime = (config.WeaponMods.NoReload and 0 or weaponDataCache.ReloadTime)
+		weaponSettings.ReloadType = (not config.WeaponMods.NoRecoil and weaponDataCache.ReloadType or nil)
 		weaponSettings.Spread = (config.WeaponMods.NoSpread and 0 or weaponDataCache.Spread)
+
+		if config.WeaponMods.NoReload and weaponDataCache.Name ~= "Knife" then
+			weaponSettings.CanFire = true
+			weaponSettings.Ammo = weaponDataCache.ClipSize
+		end
 	end
 end)
 
@@ -242,7 +238,7 @@ end))
 
 refs.gunRaycast = clientRayCast.Raycast
 clientRayCast.Raycast = function(self, rayOrigin, rayDirection)
-	if config.SilentAim.Toggle and nearestPlr then
+	if (config.SilentAim.Toggle and not config.SilentAim.AlwaysHit) and nearestPlr then
 		rayOrigin = camera.CFrame.Position
 		rayDirection = ((nearestPlr.aimPart.Position - rayOrigin).Unit * 5e3)
 	end
