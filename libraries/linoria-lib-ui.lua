@@ -492,9 +492,7 @@ do
             Library.OpenedFrames[PickerFrameOuter] = nil;
         end;
 
-        function ColorPicker:SetValue(HSV)
-            local Color = Color3.fromHSV(HSV[1], HSV[2], HSV[3]);
-
+        function ColorPicker:SetValue(Color)
             ColorPicker:SetHSVFromRGB(Color);
             ColorPicker:Display();
         end;
