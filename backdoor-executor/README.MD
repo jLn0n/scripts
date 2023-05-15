@@ -19,7 +19,10 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/created-sc
 
 - A brain that knows this stuff
 - Decent executor that supports filesystem functions (for config)
+
 ### Config Help
+#### This is currently outdated, please wait for a new documentation.
+
 - My config has reset back to original
 > The config will reset to the original config if the config errors on loading or something.
 - Adding cache example
