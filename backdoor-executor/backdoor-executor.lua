@@ -254,7 +254,13 @@ local function execScript(source, noRedirectOutput)
 				if not (jsonConverted and typeof(stdout) == "table") then return end
 
 				for _, output in stdout do
-					local outputType, timestamp = output[1], output[2]
+					local outputType, timestamp =
+						(if output[1] == 1 then
+							Enum.MessageType.MessageOutput
+						elseif output[1] == 2 then
+							Enum.MessageType.MessageWarning
+						else nil),
+						output[2]
 					output = table.concat(output, " ", 3)
 
 					execGuiAPI.console.createOutput(output, outputType, timestamp)
@@ -276,7 +282,7 @@ local function execScript(source, noRedirectOutput)
 end
 
 local function initializeRemoteInfo(params, overwriteRemoteInfo)
-	if (overwriteRemoteInfo or remoteInfo.foundBackdoor) then return end
+	if (remoteInfo.foundBackdoor and not overwriteRemoteInfo) then return end
 
 	remoteInfo.foundBackdoor = true
 	for name, value in params do
@@ -330,19 +336,17 @@ local function initRemoteRedirection()
 end
 
 local function onAttached(remoteInfoParams)
-	if remoteInfo.foundBackdoor then return end
+	if (remoteInfo.foundBackdoor and remoteInfo.instance) then return end
 	getgenv().__BEXELUAATTACHED = true
-	warn(string.format(msgOutputs.attached, remoteInfoParams.instance:GetFullName(), remoteInfoParams.instance.ClassName))
-	sendNotification("Attached!")
 	initializeRemoteInfo(remoteInfoParams)
+	sendNotification("Attached!")
+	warn(string.format(msgOutputs.attached, remoteInfoParams.instance:GetFullName(), remoteInfoParams.instance.ClassName))
 	initRemoteRedirection()
 
 	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
 		customMainTabText = msgOutputs.mainTabText,
 		customExecution = true,
-		executeFunc = function(source)
-			return execScript(source)
-		end,
+		executeFunc = function(source) return execScript(source) end,
 	})
 
 	for _, scriptSrc in config.autoExec do
@@ -358,8 +362,7 @@ local function scanBackdoors()
 	local connection;
 	connection = logService.AttributeChanged:Connect(function(attributeName)
 		if attributeName ~= nonce then return end connection:Disconnect()
-		local payloadValue = logService:GetAttribute(nonce)
-		payloadValue = string.split(payloadValue, "|")
+		local payloadValue = string.split(logService:GetAttribute(nonce), "|")
 		local remoteObj = remotesList[payloadValue[1]]
 		local payloadInfo = config.backdoorPayloads[payloadValue[2]]
 
@@ -407,21 +410,21 @@ local function scanBackdoors()
 end
 -- main
 do -- config initialization
-	local configRaw = (
+	local rawConfigFile = (
 		if isfile("bexe-config.lua") then
 			readfile("bexe-config.lua")
 		else
 			game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 	)
 	local succ, loadedConfig do
-		succ, loadedConfig = pcall(loadstring(configRaw))
+		succ, loadedConfig = pcall(loadstring(rawConfigFile))
 
 		if (not succ) then
 			warn(msgOutputs.configCantLoad)
-			configRaw = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
+			rawConfigFile = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 
-			writefile("bexe-config.lua", configRaw)
-			loadedConfig = loadstring(configRaw)()
+			writefile("bexe-config.lua", rawConfigFile)
+			loadedConfig = loadstring(rawConfigFile)()
 		end
 	end
 	local successCount = 0
@@ -437,8 +440,7 @@ do -- config initialization
 end
 do -- backdoor finding
 	if not getgenv().__BEXELUAATTACHED then
-		sendNotification("Press F9 to see the remotes being scanned.")
-		local placeCacheData = if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil
+		local placeCacheData = (if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil)
 
 		if placeCacheData then
 			local successCount = 0
@@ -460,15 +462,17 @@ do -- backdoor finding
 				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
 			end
 		else
-			if insertService:GetAttribute("bexeremotepath") then
-				local remoteRedirectSuccess = initRemoteRedirection()
+			if insertService:GetAttribute("bexeremotepath") then -- checks if remote redirection is loaded
+				local remoteRedirectSuccess = initRemoteRedirection() -- hooks into the redirected remote
 
 				if remoteRedirectSuccess then
-					onAttached(remoteInfo) -- remote redirection is initialized here
+					onAttached(remoteInfo) -- loads the ui
 				end
 			end
-			if (not remoteInfo.foundBackdoor) then -- we scan
+			if (not remoteRedirectionInitialized) then -- scanning remotes
 				local startTime = os.clock()
+
+				sendNotification("Press F9 to see the remotes being scanned.")
 				scanBackdoors()
 				warn(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
 			end
