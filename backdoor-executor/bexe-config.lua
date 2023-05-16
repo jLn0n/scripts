@@ -6,7 +6,7 @@ return {
 	["configVer"] = 6, -- don't touch this!
 	-- @tweaks
 	["redirectOutput"] = false, -- [BETA] redirects output to console
-	["redirectRemote"] = false, -- [BETA] uses a custom remote for server-side execution
+	["redirectRemote"] = false, -- [BETA] redirects to a custom remote
 
 	-- @customization
 	-- $scripts that executes after backdoor is found
