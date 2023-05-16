@@ -151,7 +151,7 @@ local function waitUntil(waitTime, condition)
 end
 
 local function isRemoteAllowed(object)
-	if not object or not (object:IsA("RemoteEvent") or object:IsA("RemoteFunction")) then
+	if typeof(object) ~= "Instance" or not (object:IsA("RemoteEvent") or object:IsA("RemoteFunction")) then
 		return false
 	end
 
