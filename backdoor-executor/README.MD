@@ -1,30 +1,43 @@
 # backdoor-executor.lua
-###
-* Created on: July 22, 2021 GMT+8 (based on the commit date in my jLn0n/scripts-private repo)
-###
-might be the best and fastest backdoor scanning tool in existance.
+
+* The very best backdoor scanning utility in existance.
 
 ## Info
 
-This script is for [ROBLOX](https://roblox.com) scanning backdoors and executing serversided scripts within a GUI.
+A backdoor scanner for [ROBLOX](https://roblox.com) that scans the game for potential backdoored remotes and uses them for running server-sided scripts.  
+
+### Features
+
+* Fast Backdoor Scanner
+* Remote and Output Redirection (DISABLED BY DEFAULT)
+* Auto Execute (CUSTOMIZABLE)
+* Macros (CUSTOMIZABLE)
+* AND MUCH MORE!!
 
 ### Script
 
-Just copy the script below and execute it through your executor.
 ```lua
 loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/backdoor-executor.lua"))()
 ```
+> Just copy the script below and run it through your script utility(executor).  
 
 ### Requirements
 
 - A brain that knows this stuff.
-- A decent script utility that supports most of [UNC](https://scriptunc.org) functions.
+- A decent script utility that supports most of [UNC](https://scriptunc.org) functions (such as file functions).
 
 ### FAQ
 
 - My configuration file got resetted back to original.
 > That's completely normal, it will happen usually if the configuration failed to load.  
 > (I might remove the overwrite thing soon.)
+
+- How can I enable Remote and Output Redirection?
+> Enable them through the config file.  
+
+- How does the Remote Redirection works?
+> It works by creating a new remote and using that new remote for running scripts.  
+> It also provides some features like anti-destroy and anti-logger.  
 
 ### Configuration Wiki
 
