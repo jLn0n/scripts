@@ -3,7 +3,7 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 7, -- don't touch this!
+	["configVer"] = 7.1, -- don't touch this!
 	-- @tweaks
 	["redirectOutput"] = false, -- [BETA] redirects output to console
 	["redirectRemote"] = false, -- [BETA] redirects to a custom remote
@@ -42,6 +42,9 @@ return {
 		["RobloxReplicatedStorage"] = function(remoteObj)
 			return remoteObj:IsDescendantOf(game:GetService("RobloxReplicatedStorage"))
 		end,
+		["RedirectedRemote"] = function(remoteObj)
+			return remoteObj:GetAttribute("isNonced")
+		end
 	},
 
 	-- $any macro shenanigans you can add here
