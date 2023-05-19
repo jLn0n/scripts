@@ -126,7 +126,7 @@ local function pathToInstance(strPath)
 	local subPaths do
 		subPaths = table.create(0)
 
-		for matchedStr in string.gmatch(strPath, "[^%.]+") do -- handle ServerScriptService[\"Test 1\"][\"Test 2\"]
+		for matchedStr in string.gmatch(strPath, "[^%.]+") do -- TODO: handle ServerScriptService[\"Test 1\"][\"Test 2\"]
 			local subPath1 = string.gsub(matchedStr, "(.+)%[\"(.-)\"%]", "%1")
 			local subPath2 = string.gsub(matchedStr, "(.+)%[\"(.-)\"%]", "%2")
 
