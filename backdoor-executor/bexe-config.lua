@@ -3,7 +3,7 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 6, -- don't touch this!
+	["configVer"] = 7, -- don't touch this!
 	-- @tweaks
 	["redirectOutput"] = false, -- [BETA] redirects output to console
 	["redirectRemote"] = false, -- [BETA] redirects to a custom remote
@@ -44,7 +44,7 @@ return {
 		end,
 	},
 
-	-- $any prefixed shenanigans you can add here
+	-- $any macro shenanigans you can add here
 	-- $prefixed as "%macro%" | example: %username% -> "Roblox", %plr_pos% -> Vector3
 	["scriptMacros"] = {
 		["username"] = player.Name,
@@ -55,18 +55,18 @@ return {
 	-- $backdoor payloads
 	["backdoorPayloads"] = {
 		["default"] = {
-			["Payload"] = {"source"},
+			["Args"] = {"source"},
 		},
 
 		-- payloads below are from github.com/L1ghtingBolt/FraktureSS
 		["helpmeRemote"] = {
-			["Payload"] = {"helpme", "source"},
+			["Args"] = {"helpme", "source"},
 		},
 		["pickettRemote"] = {
-			["Payload"] = {"cGlja2V0dA==", "source"},
+			["Args"] = {"cGlja2V0dA==", "source"},
 		},
 		["runSSRemote"] = {
-			["Payload"] = {"5#lGIERKWEF", "source"},
+			["Args"] = {"5#lGIERKWEF", "source"},
 			["Verifier"] = function(remoteObj)
 				local remoteParent = remoteObj.Parent
 				return (remoteObj.Name == "Run" and remoteParent) and (
@@ -76,7 +76,7 @@ return {
 			end
 		},
 		["emmaSSRemote"] = {
-			["Payload"] = {"pwojr8hoc0-gr0yxohlgp-0feb7ncxed", ",,,,,,,,,,,,,,,", "source"},
+			["Args"] = {"pwojr8hoc0-gr0yxohlgp-0feb7ncxed", ",,,,,,,,,,,,,,,", "source"},
 			["Verifier"] = function(remoteObj)
 				local remoteParent = remoteObj.Parent
 				return (remoteObj.Name == "emma" and remoteParent) and (
@@ -90,15 +90,15 @@ return {
 	-- $cached backdoor remotes
 	["cachedPlaces"] = {
 		[5033592164] = {
-			["Path"] = game.PlaceId == 5033592164 and game:GetService("ReplicatedStorage"):FindFirstChildWhichIsA("RemoteEvent"):GetFullName(),
+			["Remote"] = game:GetService("ReplicatedStorage"):FindFirstChildWhichIsA("RemoteEvent"),
 			["Args"] = {"1234567890", "source"}
 		},
 		[6879465970] = {
-			["Path"] = "ReplicatedStorage.RemoteEvent",
+			["Remote"] = "ReplicatedStorage.RemoteEvent",
 			["Args"] = {"source"}
 		},
 		[6664139112] = {
-			["Path"] = "ReplicatedStorage.Core.Communication.RemoteEvent",
+			["Remote"] = "ReplicatedStorage.Core.Communication.RemoteEvent",
 			["Args"] = {"Execute", "source"}
 		},
 	},
