@@ -24,13 +24,17 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/ma
 ### Requirements
 
 - A brain that knows this stuff.
-- A decent script utility that supports most of [UNC](https://scriptunc.org) functions (such as file functions).
+- A decent script utility that supports most of [UNC](https://scriptunc.org) functions (such as file functions) and all of Luau[https://luau-lang.org] features.
 
-### FAQ
+### FAQ & Troubleshooting
 
 - My configuration file got resetted back to original.
 > That's completely normal, it will happen usually if the configuration failed to load.  
-> (I might remove the overwrite thing soon.)
+> THIS DOESN'T HAPPEN NOW.
+
+- Backdoor scanner doesn't seem to work.
+> Your config file might be outdated, make sure to update your config file.  
+> The script might not support your script utility too.  
 
 - How can I enable Remote and Output Redirection?
 > Enable them through the config file.  
@@ -46,7 +50,7 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/ma
 > example:
 ```lua
 [placeid] = {
-	["Path"] = "remote.path.here", -- this is the path of the remote, don't do remote.path["here"] or it will not work
+	["Remote"] = "remote.path.here", -- the remote can be a path like "ReplicatedStorage["Remotes here"].Remote" or a instance
 	["Args"] = {"arg1here", "source"}, -- source is the place that the executing script will be putted
 	["SourceFunc"] = function(source) -- use this if a game has a custom encryption for source
 		return source
@@ -99,7 +103,7 @@ print(%username%, %userid%, %placeid%) -- prints "Username", 69420, 1818 as an e
 ```lua
 {
 	["examplePayload"] = {
-		["Payload"] = {"arg1here", "source"}, -- this is the arguments that is gonna be loaded in the specified remote, same details as the args in cache
+		["Args"] = {"arg1here", "source"}, -- this is the arguments that is gonna be loaded in the specified remote, same details as the args in cache
 		["Verifier"] = function(remoteObj) -- this verifies if remoteObj is appropriate to be used for payload, the remote will be provided with the argument {"arg1here", "payloadSrc"} if remoteObj is descendant of JointsService
 			return remoteObj:IsDescendantOf(game:GetService("JointsService"))
 		end
