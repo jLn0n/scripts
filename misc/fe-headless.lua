@@ -1,4 +1,6 @@
--- services
+return error("It doesn't work anymore, sorry!")
+
+--[[ services
 local players = game:GetService("Players")
 local starterGui = game:GetService("StarterGui")
 -- objects
@@ -42,4 +44,4 @@ resetBindableConnection = resetBindable.Event:Connect(function()
 		player.Character:BreakJoints()
 	end
 end)
-starterGui:SetCore("ResetButtonCallback", resetBindable)
+starterGui:SetCore("ResetButtonCallback", resetBindable)--]]
