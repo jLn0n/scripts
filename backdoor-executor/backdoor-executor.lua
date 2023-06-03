@@ -17,7 +17,7 @@ local execSucc, result do
 		table.insert(stdout, {0, workspace:GetServerTimeNow(), ...})
 	end
 	env.warn = function(...)
-		table.insert(stdout, {2, workspace:GetServerTimeNow(), ...})
+		table.insert(stdout, {1, workspace:GetServerTimeNow(), ...})
 	end
 	local function main() %s end
 
@@ -247,20 +247,28 @@ end
 
 local function applyRedirectedRemoteSecurity(source)
 	if not config.redirectRemote then return end
-	local generatedArgs = table.create(10)
-	local srcArgIndex = math.random(2, 9)
-	local randIndex = notSameRandNumber(1, 8, srcArgIndex)
-	local nonceIndex = notSameRandNumber(1, 8, srcArgIndex, randIndex)
+	local argsLenght = math.random(12, 32)
+	local generatedArgs = table.create(argsLenght)
+	local srcArgIdx = math.random(2, (argsLenght - 1))
+	local verificationIdx = notSameRandNumber(8, (argsLenght - 2), srcArgIdx)
+	local randIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx)
+	local nonceIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx, randIdx)
 
-	table.insert(generatedArgs, 10, true)
-	generatedArgs[srcArgIndex] = crypt.base64encode(source)
-	generatedArgs[randIndex] = srcArgIndex
-	generatedArgs[nonceIndex] = "~@" .. generateRandString(randIndex + 10)
-	for argIndex = 1, 9 do
+	generatedArgs[1] = (
+		if (math.random(1, 2) == 2) then
+			generateRandString(verificationIdx)
+		else verificationIdx
+	)
+	generatedArgs[verificationIdx] = true -- sets a boolean at idx `verificationIdx`
+	generatedArgs[srcArgIdx] = crypt.base64encode(source) -- encodes source to base64
+	generatedArgs[randIdx] = srcArgIdx -- sets the value `srcArgIdx` to `randIdx`
+	generatedArgs[nonceIdx] = "\127@" .. generateRandString(randIdx + argsLenght) -- generates a nonce that is the lenght of `randIdx`
+
+	for argIndex = 2, (argsLenght - 1) do -- inserts random jibberish
 		if typeof(generatedArgs[argIndex]) ~= "nil" then continue end
 		local useString = math.random(1, 2) == 2
 
-		generatedArgs[argIndex] = (if useString then generateRandString(math.random(12, 24)) else math.random(1, 255))
+		generatedArgs[argIndex] = (if useString then generateRandString(math.random(12, 48)) else math.random(1, 255))
 	end
 
 	return generatedArgs
@@ -283,17 +291,16 @@ local function execScript(source, noRedirectOutput)
 			if object.Value then
 				local rawStdout = object:GetAttribute("stdout")
 				local jsonConverted, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
-
 				if not (jsonConverted and typeof(stdout) == "table") then return end
 
 				for _, output in stdout do
-					local outputType, timestamp =
-						(if output[1] == 1 then
+					local outputType, timestamp = (
+						if output[1] == 0 then
 							Enum.MessageType.MessageOutput
-						elseif output[1] == 2 then
+						elseif output[1] == 1 then
 							Enum.MessageType.MessageWarning
-						else nil),
-						output[2]
+						else nil
+					), output[2]
 					output = table.concat(output, " ", 3)
 
 					execGuiAPI.console.createOutput(output, outputType, timestamp)
