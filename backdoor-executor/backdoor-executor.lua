@@ -293,22 +293,23 @@ local function execScript(source, noRedirectOutput)
 
 			local rawStdout = object:GetAttribute("stdout")
 			local jsonConverted, stdout = pcall(httpService.JSONDecode, httpService, rawStdout)
-			if not (jsonConverted and typeof(stdout) == "table") then return end
 
-			for _, output in stdout do
-				local outputType, timestamp = (
-					if output[1] == 0 then
-						Enum.MessageType.MessageOutput
-					elseif output[1] == 1 then
-						Enum.MessageType.MessageWarning
-					else nil
-				), output[2]
-				local outputMsg = ""
-				for _, value in output[3] do
-					outputMsg ..= `{tostring(value) or "nil"} `
+			if jsonConverted then
+				for _, output in stdout do
+					local outputType, timestamp = (
+						if output[1] == 0 then
+							Enum.MessageType.MessageOutput
+						elseif output[1] == 1 then
+							Enum.MessageType.MessageWarning
+						else nil
+					), output[2]
+					local outputMsg = ""
+					for _, value in output[3] do
+						outputMsg ..= `{tostring(value) or "nil"} `
+					end
+
+					execGuiAPI.console.createOutput(outputMsg, outputType, timestamp)
 				end
-
-				execGuiAPI.console.createOutput(outputMsg, outputType, timestamp)
 			end
 
 			if not object.Value then
@@ -402,6 +403,16 @@ local scanBackdoors do
 	local function testRemote(nonce, remoteObj, remoteObjId)
 		local remoteObjFunc = getRemoteFunc(remoteObj)
 
+		-- this attempts to parent the remote to replicatedstorage if remote is parented to nil
+		-- because if the remote is parented to nil, firing/invoking the remote will be voided
+		if not game:IsAncestorOf(remoteObj) then
+			task.spawn(pcall, function()
+				remoteObj.Parent = repStorage
+				task.wait(.15)
+				remoteObj.Parent = nil
+			end)
+		end
+
 		for payloadName, payloadInfo in config.backdoorPayloads do runService.Heartbeat:Wait()
 			local remotePassed = (if payloadInfo.Verifier then payloadInfo.Verifier(remoteObj) else true)
 			if (not remotePassed or not payloadInfo.Args) then continue end
@@ -412,15 +423,6 @@ local scanBackdoors do
 
 			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, `{remoteObjId}|{payloadName}`)
 			pcall(task.spawn, remoteObjFunc, remoteObj, unpack(currentPayload))
-		end
-		-- this attempts to parent the remote to replicatedstorage if remote is parented to nil
-		-- because if the remote is parented to nil, firing/invoking the remote will be voided
-		if not game:IsAncestorOf(remoteObj) then
-			pcall(function()
-				remoteObj.Parent = repStorage
-				runService.PreAnimation:Wait()
-				remoteObj.Parent = nil
-			end)
 		end
 	end
 
