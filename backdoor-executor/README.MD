@@ -25,7 +25,7 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/ma
 ### Requirements
 
 - A brain that knows this stuff.
-- A decent script utility that supports most of [UNC](https://scriptunc.org) functions (such as filesystem functions) and all of Luau[https://luau-lang.org] features.
+- A decent script utility that supports most of [UNC](https://scriptunc.org) functions (such as filesystem functions) and all of [Luau](https://luau-lang.org) features.
 
 ### FAQ & Troubleshooting
 
