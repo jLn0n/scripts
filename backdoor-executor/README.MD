@@ -7,6 +7,13 @@
 * A backdoor scanner for [ROBLOX](https://roblox.com) that scans the game for potential backdoored remotes and uses them for running server-sided scripts.  
 * **NOTE:** Make sure that you got the script from Scriptblox or this Github repo. There might have been reuploads of the script which includes malicious code.
 
+### Script
+
+> Just copy the script below and run it through your script utility(executor).
+```lua
+loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/backdoor-executor.lua"))()
+```   
+
 ### Features
 
 * Fast & Reliable Backdoor Scanner
@@ -15,17 +22,21 @@
 * Macros (CUSTOMIZABLE)
 * AND MUCH MORE!!
 
-### Script
-
-> Just copy the script below and run it through your script utility(executor).
-```lua
-loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/backdoor-executor.lua"))()
-```   
-
 ### Requirements
 
 - A brain that knows this stuff.
 - A decent script utility that supports most of [UNC](https://scriptunc.org) functions (such as filesystem functions) and all of [Luau](https://luau-lang.org) features.
+
+### Comparison
+
+|  | beckdeer skenner | backdoor.exe |
+| :- | :-: | :-: |
+| User friendly? | not so user friendly | user friendly |
+| Scan time | very fast | decently fast(depends on how many remotes are in the game) |
+| Scripting Utility Support | supports most scripting utilities (specially UNC supported scripting utilities) | supports all scripting utilities |
+| Complexity | more complex (with configs, etc.) | kinda simple |
+| Features | remote caching, autoexec, script macros, customizable remote filters, backdoor payloads, remote & output redirection | automatic remote caching, logging(donator feature?), etc.(i don't really know all of their features) |
+| Built for | script developers who want more customizability (honestly it looks like a bloat) | users, script developers |
 
 ### FAQ & Troubleshooting
 
