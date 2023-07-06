@@ -1,6 +1,7 @@
 # jLn0n's __backdoor executor__ (beckdeer skenner)
 
 * The very best backdoor scanning utility of the southeasterns.
+Join the community here: https://discord.gg/jvb7XNzNPN
 
 ## Info
 
