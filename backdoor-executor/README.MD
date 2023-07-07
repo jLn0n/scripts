@@ -1,7 +1,7 @@
 # jLn0n's __backdoor executor__ (beckdeer skenner)
 
-* The very best backdoor scanning utility of the southeasterns.
-Join the community here: https://discord.gg/jvb7XNzNPN
+The very best backdoor scanning utility of the southeasterns.  
+Join my community here: https://discord.gg/jvb7XNzNPN  
 
 ## Info
 
@@ -18,7 +18,7 @@ loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/ma
 ### Features
 
 * Fast & Reliable Backdoor Scanner
-* Remote & Output Redirection (DISABLED BY DEFAULT)
+* Remote & Output Redirection
 * Auto Execute (CUSTOMIZABLE)
 * Macros (CUSTOMIZABLE)
 * AND MUCH MORE!!
@@ -128,7 +128,8 @@ print(%username%, %userid%, %placeid%) -- prints "Username", 69420, 1818 as an e
 {
 	["examplePayload"] = {
 		["Args"] = {"arg1here", "source"}, -- this is the arguments that is gonna be loaded in the specified remote, same details as the args in cache
-		["Verifier"] = function(remoteObj) -- this verifies if remoteObj is appropriate to be used for payload, the remote will be provided with the argument {"arg1here", "source"} if remoteObj is a descendant of JointsService
+		["Priority"] = 1, -- this is the theoretical position on what place the payload is gonna get applied. 1 is the minimum while 1024 is the maximum
+		["Verifier"] = function(remoteObj) -- (OPTIONAL) this verifies if remoteObj is appropriate to be used for payload, the remote will be provided with the argument {"arg1here", "source"} if remoteObj is a descendant of JointsService
 			return remoteObj:IsDescendantOf(game:GetService("JointsService"))
 		end
 	}
