@@ -3,16 +3,16 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 7.1, -- don't touch this!
+	["configVer"] = 8, -- don't touch this!
 	-- @tweaks
-	["redirectOutput"] = false, -- [BETA] redirects output to console
-	["redirectRemote"] = false, -- [BETA] redirects to a custom remote
+	["redirectOutput"] = true, -- redirects output to console
+	["redirectRemote"] = true, -- uses a custom created remote for server-side execution
 
 	-- @customization
 	-- $scripts that executes after backdoor is found
 	-- $you can add any scripts here
 	["autoExec"] = {
-		[[print("backdoor-executor.lua is epic!")]],
+		[[print("jLn0n's beckdeer skeneer is epic!")]],
 	},
 
 	-- $remote filters that you don't want to be scanned
@@ -59,34 +59,7 @@ return {
 	["backdoorPayloads"] = {
 		["default"] = {
 			["Args"] = {"source"},
-		},
-
-		-- payloads below are from github.com/L1ghtingBolt/FraktureSS
-		["helpmeRemote"] = {
-			["Args"] = {"helpme", "source"},
-		},
-		["pickettRemote"] = {
-			["Args"] = {"cGlja2V0dA==", "source"},
-		},
-		["runSSRemote"] = {
-			["Args"] = {"5#lGIERKWEF", "source"},
-			["Verifier"] = function(remoteObj)
-				local remoteParent = remoteObj.Parent
-				return (remoteObj.Name == "Run" and remoteParent) and (
-					remoteParent:FindFirstChild("Pages") and remoteParent:FindFirstChild("R6") and
-					remoteParent:FindFirstChild("Version") and remoteParent:FindFirstChild("Title")
-				)
-			end
-		},
-		["emmaSSRemote"] = {
-			["Args"] = {"pwojr8hoc0-gr0yxohlgp-0feb7ncxed", ",,,,,,,,,,,,,,,", "source"},
-			["Verifier"] = function(remoteObj)
-				local remoteParent = remoteObj.Parent
-				return (remoteObj.Name == "emma" and remoteParent) and (
-					remoteParent.Name == "mynameemma" and
-					remoteParent:IsDescendantOf(game:GetService("ReplicatedStorage"))
-				)
-			end
+			["Priority"] = 1
 		},
 	},
 
@@ -99,10 +72,6 @@ return {
 		[6879465970] = {
 			["Remote"] = "ReplicatedStorage.RemoteEvent",
 			["Args"] = {"source"}
-		},
-		[6664139112] = {
-			["Remote"] = "ReplicatedStorage.Core.Communication.RemoteEvent",
-			["Args"] = {"Execute", "source"}
 		},
 	},
 }
