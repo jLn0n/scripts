@@ -3,8 +3,9 @@ local player = game:GetService("Players").LocalPlayer
 
 -- main
 return {
-	["configVer"] = 8, -- don't touch this!
+	["configVer"] = 9, -- don't touch this!
 	-- @tweaks
+	["enableLogging"] = true, -- logs anything that happens
 	["redirectOutput"] = true, -- redirects output to console
 	["redirectRemote"] = true, -- uses a custom created remote for server-side execution
 
