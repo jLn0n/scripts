@@ -297,7 +297,7 @@ local applyRedirectedRemoteSecurity do
 
 			generatedArgs[argIndex] = (
 				if valueType == 1 then
-					generateRandString(math.random(12, 72))
+					generateRandString(math.random(12, 512))
 				elseif valueType == 2 then
 					math.random(0, 0x7fffffff)
 				elseif valueType == 3 then
@@ -419,7 +419,7 @@ local function onAttached(remoteInfoParams)
 	initRemoteRedirection()
 
 	execGuiAPI = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/jLn0n/executor-gui/main/src/loader.lua"))({
-		customMainTabText = msgOutputs.mainTabText,
+		mainTabText = msgOutputs.mainTabText,
 		customExecution = true,
 		executeFunc = function(source) return execScript(source) end,
 	})
