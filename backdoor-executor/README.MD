@@ -1,12 +1,15 @@
 # jLn0n's __backdoor executor__ (beckdeer skenner)
 
 The very best backdoor scanning utility of the southeasterns.  
-Join my community here: https://discord.gg/jvb7XNzNPN  
 
 ## Info
 
 * A backdoor scanner for [ROBLOX](https://roblox.com) that scans the game for potential backdoored remotes and uses them for running server-sided scripts.  
 * **NOTE:** Make sure that you got the script from Scriptblox or this Github repo. There might have been reuploads of the script which includes malicious code.
+
+## Links
+* [Scriptblox Page](https://scriptblox.com/script/Universal-Script-jalon's-backdeer-skenner-6614)
+* [Discord Community](https://discord.gg/jvb7XNzNPN)
 
 ### Script
 
