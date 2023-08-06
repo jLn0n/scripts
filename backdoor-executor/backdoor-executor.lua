@@ -22,7 +22,6 @@ local remoteInfo = {
 	["redirection"] = {
 		["__testver"] = false, -- using the test version might not always work, use with caution
 		["initialized"] = false,
-		["encryptionSeed"] = Random.new(workspace:GetServerTimeNow()):NextInteger(0, 0xffffffff)
 	}
 }
 local msgOutputs = {
@@ -248,16 +247,14 @@ local function getRemoteFunc(remoteObj)
 end
 
 local applyRedirectedRemoteSecurity do
-	local encryptionRandom = Random.new(remoteInfo.redirection.encryptionSeed)
-
 	-- simple XOR encryption algorithm, nothing special
 	local function XORSource(source: string, key: number): string
 		local randomObj = Random.new(key)
 		local result = ""
 		local randX, randY, randZ =
-			encryptionRandom:NextInteger(0, 128),
-			encryptionRandom:NextInteger(0, 96),
-			encryptionRandom:NextInteger(0, 32)
+			randomObj:NextInteger(0, 128),
+			randomObj:NextInteger(0, 96),
+			randomObj:NextInteger(0, 32)
 
 		for idx = 1, #source do
 			local charByte = string.byte(source, idx, idx)
@@ -273,12 +270,12 @@ local applyRedirectedRemoteSecurity do
 	function applyRedirectedRemoteSecurity(source)
 		if not config.redirectRemote then return end
 		local argsLenght = math.random(12, 32)
-		local nonceOffset = encryptionRandom:NextInteger(8, argsLenght)
 		local generatedArgs = table.create(argsLenght)
-		local srcArgIdx = math.random(2, (argsLenght - 1))
-		local verificationIdx = notSameRandNumber(8, (argsLenght - 2), srcArgIdx)
+		local verificationIdx = math.random(4, (argsLenght - 1))
+		local srcArgIdx = notSameRandNumber(2, (argsLenght - 2), verificationIdx)
 		local randIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx)
 		local nonceIdx = notSameRandNumber(2, (argsLenght - 3), srcArgIdx, verificationIdx, randIdx)
+		local nonceOffset = Random.new((argsLenght / verificationIdx) % (verificationIdx * 2)):NextInteger(8, argsLenght)
 		local XORKey = math.ceil(((((argsLenght / randIdx) % verificationIdx) * nonceIdx) * (verificationIdx * srcArgIdx)) * nonceOffset)
 
 		generatedArgs[1] = (
@@ -373,7 +370,7 @@ local function initRemoteRedirection()
 	if not (remoteInfo.foundBackdoor and (config.redirectRemote and not remoteInfo.redirection.initialized)) then return false end
 	local nonce = generateRandString(32, true)
 
-	execScript(`require({if remoteInfo.redirection.__testver then 11906414795 else 11906423264})("{nonce}", "{remoteInfo.redirection.encryptionSeed}", %userid%)`, true) -- if you wanna try out new features, set 'remoteInfo.redirection.__testver' to true
+	execScript(`require({if remoteInfo.redirection.__testver then 11906414795 else 11906423264})("{nonce}", %userid%)`, true) -- if you wanna try out new features, set 'remoteInfo.redirection.__testver' to true
 	waitUntil(5, function() return insertService:GetAttribute(nonce) end) -- we need to improvise until :WaitForAttribute is added
 	local redirectedRemotePath = insertService:GetAttribute(nonce)
 
