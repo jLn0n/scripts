@@ -138,13 +138,9 @@ local function pathToInstance(strPath)
 	end
 	local result = game
 
-	for index, pathName in subPaths do
+	for _, pathName in subPaths do
 		if not result then return end
-		result = (
-			if index == 1 and game:FindService(pathName) then
-				game:GetService(pathName)
-			else result:WaitForChild(pathName, 1)
-		)
+		result = result:WaitForChild(pathName, 1)
 	end
 	return result
 end
