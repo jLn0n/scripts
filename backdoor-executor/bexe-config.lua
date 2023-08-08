@@ -1,5 +1,10 @@
 -- objects
 local player = game:GetService("Players").LocalPlayer
+game:GetService("StarterGui"):SetCore("SendNotification", {
+	Title = "[jLn0n's beckdeer skenner]",
+	Text = "That script you have is outdated, please visit 'github.com/jLn0n/beckdeer-skenner'!",
+	Duration = 5
+})
 
 -- main
 return {
