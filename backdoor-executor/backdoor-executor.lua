@@ -462,7 +462,7 @@ local function scanBackdoors()
 		if remoteInfo.foundBackdoor then break end
 
 		logToConsole("print", string.format(msgOutputs.printRemote, getFullNameOf(remoteObj), remoteObjId, remoteObj.ClassName))
-		task.spawn(testRemote, nonce, remoteObj, remoteObjId)
+		testRemote(nonce, remoteObj, remoteObjId)
 	end
 
 	waitUntil(2.5, function() return not connection.Connected end)
