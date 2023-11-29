@@ -26,7 +26,9 @@
 	- Used to create a listener for listening changes to data.
 	- This function will error if `commsId` is not defined by `comms.new_id`.
 
-	PROGRAM LIBRARIES:
+	INTEGRATIONS:
+	- Libraries that works with this library.
+
 	Roblox: https://github.com/jLn0n/scripts/blob/main/cheat-engine/communication_lib_roblox.rbxm
 
 	------------------------------------------------------------------------------------------------
