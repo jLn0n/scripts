@@ -4,7 +4,8 @@
 	@jLn0n | 2023
 
 	A library used to communicate between a program and Cheat Engine while using strings (janky).
-	Docs:
+
+	DOCUMENTATION:
 	comms.new_id(commsId: string): ()
 	- Used to initialize a new communication id, should only be called once when adding new id.
 
@@ -14,7 +15,7 @@
 	  when its outdated.
 
 	comms.communicate(commsId: string, data: string): ()
-	- Used to communicate with the assigned communication id.
+	- Used to send data within the assigned `commsId`.
 	- This function will error if `commsId` is not defined by `comms.new_id`.
 
 	comms.get_data(commsId: string): string?
@@ -24,6 +25,9 @@
 	comms.new_listener(commsId: string, callback: (data: string) -> ()): Thread
 	- Used to create a listener for listening changes to data.
 	- This function will error if `commsId` is not defined by `comms.new_id`.
+
+	PROGRAM LIBRARIES:
+	Roblox: https://github.com/jLn0n/scripts/blob/main/cheat-engine/communication_lib_roblox.rbxm
 
 	------------------------------------------------------------------------------------------------
 	example: (will only work on https://www.roblox.com/games/14049812318)
