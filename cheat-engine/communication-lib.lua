@@ -27,7 +27,7 @@
 	- This function will error if `commsId` is not defined by `comms.new_id`.
 
 	INTEGRATIONS:
-	- Libraries that works with this library.
+	- Libraries that works with communication lib.
 
 	Roblox: https://github.com/jLn0n/scripts/blob/main/cheat-engine/communication_lib_roblox.rbxm
 
@@ -65,7 +65,7 @@ local util do
 
 	util.intToBytes = function(val)
 		if not val then
-			error("Cannot convert nil value to byte table")
+			return error("Cannot convert nil value to byte table")
 		end
 
 		local t = {val & 0xFF}
@@ -92,7 +92,7 @@ local util do
 end
 
 -- variables
-local alloc_size = 2^24
+local alloc_size = 2^24 -- 16mb of allocation, allocation only happens in the program itself.
 local signature = "R\34" -- you can customize this
 local PAYLOAD_MATCH = "^" .. signature .. "%w+%-%w+|[%x]+|"
 local HEX_MATCH = "|%x+"
@@ -145,7 +145,7 @@ local function fetchCommsAddy(addys_list, commsId)
 	if not stringAddy then -- if not found
 		return
 	end
-	if string.sub(readString(stringAddy) or "", 1, 2) == signature then
+	if string.sub(readString(stringAddy) or "", 1, 2) == signature then -- verifies signature
 		return stringAddy
 	end
 
@@ -166,12 +166,14 @@ local function _comms_onDataRecieved(thread, commsId, callback)
 	while not thread.Terminated do sleep(1/45 * 1000)
 		local current_data, current_data_id = comms.get_data(commsId, true)
 		if not (current_data and current_data_id) then
+			thread.terminate()
+			thread.destroy()
 			break
 		end
 
 		if not (data_cache == current_data and data_id_cache == current_data_id) then
 			data_cache, data_id_cache = current_data, current_data_id
-			synchronize(callback, data_cache)
+			synchronize(callback, data_cache, data_id_cache)
 		end
 		::continue_commslistener::
 	end
