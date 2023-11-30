@@ -98,6 +98,7 @@ local PAYLOAD_MATCH = "^" .. signature .. "%w+%-%w+|[%x]+|"
 local HEX_MATCH = "|%x+"
 local DATA_IDX_MATCH = "%-%w+|"
 local CHAR_LIST = "QWERTYUIOPASDFGHJKLXCVBNMqwertyuiopasdfghjklzxcvbnm"
+local comms_lib
 
 -- helper
 local function parseData(data)
@@ -161,10 +162,10 @@ end
 
 local function _comms_onDataRecieved(thread, commsId, callback)
 	thread.Name = "comms_onDataRecieved"
-	local data_cache, data_id_cache = comms.get_data(commsId, true)
+	local data_cache, data_id_cache = comms_lib.get_data(commsId, true)
 
 	while not thread.Terminated do sleep(1/45 * 1000)
-		local current_data, current_data_id = comms.get_data(commsId, true)
+		local current_data, current_data_id = comms_lib.get_data(commsId, true)
 		if not (current_data and current_data_id) then
 			thread.terminate()
 			thread.destroy()
@@ -175,26 +176,25 @@ local function _comms_onDataRecieved(thread, commsId, callback)
 			data_cache, data_id_cache = current_data, current_data_id
 			synchronize(callback, data_cache, data_id_cache)
 		end
-		::continue_commslistener::
 	end
 end
 
 -- main
-local comms = {}
-comms.addys = {}
+comms_lib = {}
+comms_lib.addys = {}
 
-comms.new_id = function(commsId, fetchAddy)
-	if comms.addys[commsId] then return end
-	comms.addys[commsId] = 0
+comms_lib.new_id = function(commsId, fetchAddy)
+	if comms_lib.addys[commsId] then return end
+	comms_lib.addys[commsId] = 0
 
 	if fetchAddy then
-		fetchCommsAddy(comms.addys, commsId)
+		fetchCommsAddy(comms_lib.addys, commsId)
 	end
 end
 
-comms.update_addys = function()
-	for commsId in pairs(comms.addys) do
-		local stringAddy = fetchCommsAddy(comms.addys, commsId)
+comms_lib.update_addys = function()
+	for commsId in pairs(comms_lib.addys) do
+		local stringAddy = fetchCommsAddy(comms_lib.addys, commsId)
 		if not stringAddy then
 			print("Failed to update address of commsId:", commsId)
 			goto continue_commsscan
@@ -205,12 +205,12 @@ comms.update_addys = function()
 	end
 end
 
-comms.communicate = function(commsId, data, silentError)
-	if (not comms.addys[commsId] and not silentError) then
+comms_lib.communicate = function(commsId, data, silentError)
+	if (not comms_lib.addys[commsId] and not silentError) then
 		return error(string.format("Communication Id not defined: '%s'", commsId), 2)
 	end
 
-	local stringAddy = fetchCommsAddy(comms.addys, commsId)
+	local stringAddy = fetchCommsAddy(comms_lib.addys, commsId)
 	if not stringAddy or stringAddy == 0 then
 		return
 	end
@@ -219,12 +219,12 @@ comms.communicate = function(commsId, data, silentError)
 	writeString(stringAddy, payload)
 end
 
-comms.get_data = function(commsId, silentError)
-	if (not comms.addys[commsId] and not silentError) then
+comms_lib.get_data = function(commsId, silentError)
+	if (not comms_lib.addys[commsId] and not silentError) then
 		return error(string.format("Communication Id not defined: '%s'", commsId), 2)
 	end
 
-	local stringAddy = fetchCommsAddy(comms.addys, commsId)
+	local stringAddy = fetchCommsAddy(comms_lib.addys, commsId)
 	if not stringAddy or stringAddy == 0 then
 		return
 	end
@@ -232,12 +232,12 @@ comms.get_data = function(commsId, silentError)
 	return parseData(readString(stringAddy))
 end
 
-comms.new_listener = function(commsId, callback)
-	if (not comms.addys[commsId]) then
+comms_lib.new_listener = function(commsId, callback)
+	if (not comms_lib.addys[commsId]) then
 		return error(string.format("Communication Id not defined: '%s'", commsId), 2)
 	end
 
 	return createThread(_comms_onDataRecieved, commsId, callback)
 end
 
-return comms
+return comms_lib
