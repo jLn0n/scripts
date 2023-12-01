@@ -6,25 +6,29 @@
 	A library used to communicate between a program and Cheat Engine while using strings (janky).
 
 	DOCUMENTATION:
-	comms.new_id(commsId: string): ()
-	- Used to initialize a new communication id, should only be called once when adding new id.
+	comms_lib.new_id(commsId: string): ()
+	- Initializes a new communication id, should only be called once when adding new id.
+	- Alphanumeric characters and underscores are only allowed in `commsId`. (A-Za-z0-9_)
 
-	comms.update_addys(): ()
-	- Used to update the addresses of a string that is assigned by id.
-	- This might be useless since `comms.communicate` & `comms.get_data` already updates the address
+	comms_lib.update_addys(): ()
+	- Updates all of the added communication id(s).
+	- This might be useless since `comms_lib.communicate` & `comms_lib.get_data` already updates the address
 	  when its outdated.
 
-	comms.communicate(commsId: string, data: string): ()
-	- Used to send data within the assigned `commsId`.
-	- This function will error if `commsId` is not defined by `comms.new_id`.
+	comms_lib.update_addy(commsId: string): ()
+	- Tries to update the address of a communication id.
 
-	comms.get_data(commsId: string): string?
-	- Used to fetch data that the program had transferred to Cheat Engine.
-	- This function will error if `commsId` is not defined by `comms.new_id`.
+	comms_lib.communicate(commsId: string, data: string): ()
+	- Sends `data` to assigned `commsId`.
+	- This function will error if `commsId` is not defined by `comms_lib.new_id`.
 
-	comms.new_listener(commsId: string, callback: (data: string) -> ()): Thread
-	- Used to create a listener for listening changes to data.
-	- This function will error if `commsId` is not defined by `comms.new_id`.
+	comms_lib.get_data(commsId: string): string?
+	- Fetches current data of `commsId`.
+	- This function will error if `commsId` is not defined by `comms_lib.new_id`.
+
+	comms_lib.new_listener(commsId: string, callback: (data: string, nonce: string) -> ()): Thread
+	- Creates a listener for listening changes to data.
+	- This function will error if `commsId` is not defined by `comms_lib.new_id`.
 
 	INTEGRATIONS:
 	- Libraries that works with communication lib.
@@ -34,13 +38,13 @@
 	------------------------------------------------------------------------------------------------
 	example: (will only work on https://www.roblox.com/games/14049812318)
 	-- first example
-	comms.new_id("test") -- defines communication id
-	comms.communicate("test", "Hello World!") -- communicates to the program
-	print(comms.get_data("test")) -- prints "Hello World!"
+	comms_lib.new_id("test") -- defines communication id
+	comms_lib.communicate("test", "Hello World!") -- communicates to the program
+	print(comms_lib.get_data("test")) -- prints "Hello World!"
 
 	-- listener example
-	comms.new_id("test2") -- defines communication id
-	comms.new_listener("test2", function(data)
+	comms_lib.new_id("test2") -- defines communication id
+	comms_lib.new_listener("test2", function(data)
 		print("got new data:", data)
 	end)
 --]]
@@ -94,9 +98,10 @@ end
 -- variables
 local alloc_size = 2^24 -- 16mb of allocation, allocation only happens in the program itself.
 local signature = "R\34" -- you can customize this
-local PAYLOAD_MATCH = "^" .. signature .. "%w+%-%w+|[%x]+|"
+local PAYLOAD_TEMPLATE = "%s%s-%s|%08X|%s"
+local PAYLOAD_MATCH = "^" .. signature .. "[%w_]+%-%w+|%x+|"
 local HEX_MATCH = "|%x+"
-local DATA_IDX_MATCH = "%-%w+|"
+local DATA_NONCE_MATCH = "%-%w+|"
 local CHAR_LIST = "QWERTYUIOPASDFGHJKLXCVBNMqwertyuiopasdfghjklzxcvbnm"
 local comms_lib
 
@@ -108,22 +113,22 @@ local function parseData(data)
 	end
 
 	local str_lenght = string.match(data, HEX_MATCH, 1)
-	str_lenght = (str_lenght and tonumber(string.sub(str_lenght, 2, #str_lenght), 16) or nil)
+	str_lenght = (str_lenght and tonumber(string.sub(str_lenght, 2), 16) or nil)
 	if not str_lenght then
 		return
 	end
 
-	local data_id = string.match(data, DATA_IDX_MATCH, 1)
-	data_id = (data_id and string.sub(data_id, 2, #data_id - 1) or nil)
-	if not data_id then
+	local nonce = string.match(data, DATA_NONCE_MATCH, 1)
+	nonce = (nonce and string.sub(nonce, 2, #nonce - 1) or nil)
+	if not nonce then
 		return
 	end
 
 	local _, payload_end = string.find(data, PAYLOAD_MATCH, 1)
-	return string.sub(data, payload_end + 1, payload_end + str_lenght), data_id
+	return string.sub(data, payload_end + 1, payload_end + str_lenght), nonce
 end
 
-local function generateDataId()
+local function generateNonce()
 	local result = {}
 
 	for _ = 1, 5 do
@@ -135,10 +140,10 @@ end
 
 local function compileCommData(commsId, data)
 	data = string.sub(data or "", 1, alloc_size)
-	commsId = string.format(signature .. "%s", commsId)
-	local id = generateDataId()
+	commsId = (signature .. commsId)
+	local nonce = generateNonce()
 
-	return string.format("%s-%s|%08X|%s\0", commsId, id, #data, data), commsId
+	return string.format(PAYLOAD_TEMPLATE, "", commsId, nonce, #data, data), commsId
 end
 
 local function fetchCommsAddy(addys_list, commsId)
@@ -162,19 +167,19 @@ end
 
 local function _comms_onDataRecieved(thread, commsId, callback)
 	thread.Name = "comms_onDataRecieved"
-	local data_cache, data_id_cache = comms_lib.get_data(commsId, true)
+	local data_cache, data_nonce_cache = comms_lib.get_data(commsId, true)
 
 	while not thread.Terminated do sleep(1/45 * 1000)
-		local current_data, current_data_id = comms_lib.get_data(commsId, true)
-		if not (current_data and current_data_id) then
+		local current_data, current_data_nonce = comms_lib.get_data(commsId, true)
+		if not (current_data and current_data_nonce) then
 			thread.terminate()
 			thread.destroy()
 			break
 		end
 
-		if not (data_cache == current_data and data_id_cache == current_data_id) then
-			data_cache, data_id_cache = current_data, current_data_id
-			synchronize(callback, data_cache, data_id_cache)
+		if not (data_cache == current_data and data_nonce_cache == current_data_nonce) then
+			data_cache, data_nonce_cache = current_data, current_data_nonce
+			synchronize(callback, data_cache, data_nonce_cache)
 		end
 	end
 end
@@ -184,6 +189,9 @@ comms_lib = {}
 comms_lib.addys = {}
 
 comms_lib.new_id = function(commsId, fetchAddy)
+	if not string.find(commsId, "[%w_]+", 1) then
+		return error("commsId is invalid.", 0) -- improve error.
+	end
 	if comms_lib.addys[commsId] then return end
 	comms_lib.addys[commsId] = 0
 
@@ -203,6 +211,10 @@ comms_lib.update_addys = function()
 		print(string.format("'%s' address: %08X", commsId, stringAddy))
 		::continue_commsscan::
 	end
+end
+
+comms_lib.update_addy = function(commsId)
+	fetchCommsAddy(comms_lib.addys, commsId)
 end
 
 comms_lib.communicate = function(commsId, data, silentError)
@@ -228,8 +240,9 @@ comms_lib.get_data = function(commsId, silentError)
 	if not stringAddy or stringAddy == 0 then
 		return
 	end
+	local offset = (#signature + #commsId + 5 + 10) -- size of payload info thing
 
-	return parseData(readString(stringAddy))
+	return parseData(readString(stringAddy, alloc_size + offset))
 end
 
 comms_lib.new_listener = function(commsId, callback)
@@ -240,4 +253,5 @@ comms_lib.new_listener = function(commsId, callback)
 	return createThread(_comms_onDataRecieved, commsId, callback)
 end
 
+_ENV.comms_lib = comms_lib
 return comms_lib
