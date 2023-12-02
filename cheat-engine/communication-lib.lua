@@ -88,6 +88,7 @@ local util do
 			local value = scan_result[_idx]
 			local str = value and readString(value) or nil
 
+			print(value, str)
 			if (str and string.find(str, "^" .. search)) then
 				return value
 			end
@@ -169,7 +170,7 @@ local function _comms_onDataRecieved(thread, commsId, callback)
 	thread.Name = "comms_onDataRecieved"
 	local data_cache, data_nonce_cache = comms_lib.get_data(commsId, true)
 
-	while not thread.Terminated do sleep(1/45 * 1000)
+	while not thread.Terminated do
 		local current_data, current_data_nonce = comms_lib.get_data(commsId, true)
 		if not (current_data and current_data_nonce) then
 			thread.terminate()
@@ -181,6 +182,7 @@ local function _comms_onDataRecieved(thread, commsId, callback)
 			data_cache, data_nonce_cache = current_data, current_data_nonce
 			synchronize(callback, data_cache, data_nonce_cache)
 		end
+		sleep(1/45 * 1000)
 	end
 end
 
@@ -240,9 +242,12 @@ comms_lib.get_data = function(commsId, silentError)
 	if not stringAddy or stringAddy == 0 then
 		return
 	end
-	local offset = (#signature + #commsId + 5 + 10) -- size of payload info thing
+	local payload_info_size = (#signature + #commsId + 5 + 10) -- size of payload info thing
+	local raw_data = readString(stringAddy, alloc_size + payload_info_size)
 
-	return parseData(readString(stringAddy, alloc_size + offset))
+	if raw_data then
+		return parseData(raw_data)
+	end
 end
 
 comms_lib.new_listener = function(commsId, callback)
