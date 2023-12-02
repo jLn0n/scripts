@@ -48,6 +48,18 @@
 		print("got new data:", data)
 	end)
 --]]
+
+-- variables
+local alloc_size = 2^24 -- 16mb of allocation, allocation only happens in the program itself.
+local signature = "R\34" -- you can customize this
+local PAYLOAD_TEMPLATE = "%s%s-%s|%08X|%s"
+local PAYLOAD_MATCH = "^" .. signature .. "[%w_]+%-%w+|%x+|"
+local HEX_MATCH = "|%x+"
+local DATA_NONCE_MATCH = "%-%w+|"
+local CHAR_LIST = "QWERTYUIOPASDFGHJKLXCVBNMqwertyuiopasdfghjklzxcvbnm"
+local comms_lib = {}
+
+-- helpers
 local util do
 	util = {}
 
@@ -85,27 +97,16 @@ local util do
 		if not scan_result then return end
 
 		for _idx = 1, #scan_result do
-			local value = scan_result[_idx]
-			local str = value and readString(value) or nil
+			local address = scan_result[_idx]
+			local str = address and readString(address, 1024) or nil
 
-			if (str and string.find(str, "^" .. search)) then
-				return value
+			if (str and string.find(str, search)) then
+				return address
 			end
 		end
 	end
 end
 
--- variables
-local alloc_size = 2^24 -- 16mb of allocation, allocation only happens in the program itself.
-local signature = "R\34" -- you can customize this
-local PAYLOAD_TEMPLATE = "%s%s-%s|%08X|%s"
-local PAYLOAD_MATCH = "^" .. signature .. "[%w_]+%-%w+|%x+|"
-local HEX_MATCH = "|%x+"
-local DATA_NONCE_MATCH = "%-%w+|"
-local CHAR_LIST = "QWERTYUIOPASDFGHJKLXCVBNMqwertyuiopasdfghjklzxcvbnm"
-local comms_lib
-
--- helper
 local function parseData(data)
 	local data_sig = string.sub(data, 1, #signature)
 	if data_sig ~= signature then
@@ -186,7 +187,6 @@ local function _comms_onDataRecieved(thread, commsId, callback)
 end
 
 -- main
-comms_lib = {}
 comms_lib.addys = {}
 
 comms_lib.new_id = function(commsId, fetchAddy)
