@@ -257,5 +257,5 @@ comms_lib.new_listener = function(commsId, callback)
 	return createThread(_comms_onDataRecieved, commsId, callback)
 end
 
-_ENV.comms_lib = comms_lib
+--_ENV.comms_lib = comms_lib
 return comms_lib
