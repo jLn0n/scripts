@@ -88,7 +88,6 @@ local util do
 			local value = scan_result[_idx]
 			local str = value and readString(value) or nil
 
-			print(value, str)
 			if (str and string.find(str, "^" .. search)) then
 				return value
 			end
