@@ -69,12 +69,10 @@ local function new_2d_triangle(parent)
 		w2 = wedge_template:Clone()
 	}
 	local is_destroyed = false
-	
-	wedges.w1.Name = drawing_idx
-	wedges.w2.Name = drawing_idx
+
 	wedges.w1.Parent = parent
 	wedges.w2.Parent = parent
-	
+
 	local function construct_triangle(point_a, point_b, point_c)
 		if is_destroyed then return end
 
@@ -96,20 +94,20 @@ local function new_2d_triangle(parent)
 
 		local m1 = (point_a + point_b) / 2;
 		local m2 = (point_a + point_c) / 2;
-		
-		wedges.w1.Image = (if flip	then triangle_assets.right else triangle_assets.left)
+
+		wedges.w1.Image = (if flip then triangle_assets.right else triangle_assets.left)
 		wedges.w1.AnchorPoint = vect2_half
 		wedges.w1.Size = UDim2.fromOffset(math.abs(unit:Dot(ab)), height)
 		wedges.w1.Position = UDim2.fromOffset(m1.x, m1.y)
 		wedges.w1.Rotation = theta
-		
-		wedges.w2.Image = (if flip	then triangle_assets.left else triangle_assets.right)
+
+		wedges.w2.Image = (if flip then triangle_assets.left else triangle_assets.right)
 		wedges.w2.AnchorPoint = vect2_half
 		wedges.w2.Size = UDim2.fromOffset(math.abs(unit:Dot(ac)), height)
 		wedges.w2.Position = UDim2.fromOffset(m2.x, m2.y)
 		wedges.w2.Rotation = theta
 	end
-	
+
 	local function destroy_triangle()
 		is_destroyed = true
 
@@ -129,11 +127,11 @@ drawing_lib.Fonts = {
 	["Monospace"] = 3
 }
 
-function drawing_lib.new(drawingType)
+function drawing_lib.new(drawing_type)
 	drawing_idx += 1
 	local drawing_obj = {}
 
-	if drawingType == "Line" then
+	if drawing_type == "Line" then
 		local drawing_info = ({
 			From = Vector2.zero,
 			To = Vector2.zero,
@@ -153,7 +151,7 @@ function drawing_lib.new(drawingType)
 		lineFrame.Size = UDim2.new()
 
 		lineFrame.Parent = drawing_container
-		
+
 		return setmetatable(drawing_obj, {
 			__newindex = function(_, index, value)
 				if typeof(drawing_info[index]) == "nil" then return end
@@ -202,7 +200,7 @@ function drawing_lib.new(drawingType)
 				return drawing_info[index]
 			end
 		})
-	elseif drawingType == "Text" then
+	elseif drawing_type == "Text" then
 		local drawing_info = ({
 			Text = "",
 			Font = drawing_lib.Fonts.UI,
@@ -290,7 +288,7 @@ function drawing_lib.new(drawingType)
 				return drawing_info[index]
 			end
 		})
-	elseif drawingType == "Circle" then
+	elseif drawing_type == "Circle" then
 		local drawing_info = ({
 			Radius = 150,
 			Position = Vector2.zero,
@@ -357,7 +355,7 @@ function drawing_lib.new(drawingType)
 				return drawing_info[index]
 			end
 		})
-	elseif drawingType == "Square" then
+	elseif drawing_type == "Square" then
 		local drawing_info = ({
 			Size = Vector2.zero,
 			Position = Vector2.zero,
@@ -419,7 +417,7 @@ function drawing_lib.new(drawingType)
 				return drawing_info[index]
 			end
 		})
-	elseif drawingType == "Image" then
+	elseif drawing_type == "Image" then
 		local drawing_info = ({
 			Data = "",
 			DataURL = "rbxassetid://0",
@@ -471,7 +469,7 @@ function drawing_lib.new(drawingType)
 				return drawing_info[index]
 			end
 		})
-	elseif drawingType == "Quad" then
+	elseif drawing_type == "Quad" then
 		local drawing_info = ({
 			PointA = Vector2.zero,
 			PointB = Vector2.zero,
@@ -486,12 +484,12 @@ function drawing_lib.new(drawingType)
 		line_points.B = drawing_lib.new("Line")
 		line_points.C = drawing_lib.new("Line")
 		line_points.D = drawing_lib.new("Line")
-		
+
 		local construct_tri1, remove_tri1, wedges1 = new_2d_triangle(drawing_container)
 		local construct_tri2, remove_tri2, wedges2 = new_2d_triangle(drawing_container)
 
 		construct_tri1(drawing_info.PointA, drawing_info.PointB, drawing_info.PointC)
-		construct_tri2(drawing_info.PointB, drawing_info.PointC, drawing_info.PointD)
+		construct_tri2(drawing_info.PointD, drawing_info.PointC, drawing_info.PointB)
 		wedges1.w1.Visible = drawing_info.Visible
 		wedges1.w2.Visible = drawing_info.Visible
 		wedges2.w1.Visible = drawing_info.Visible
@@ -505,23 +503,21 @@ function drawing_lib.new(drawingType)
 					line_points.A.From = value
 					line_points.B.To = value
 					construct_tri1(value, drawing_info.PointB, drawing_info.PointC)
-					--construct_tri2(drawing_info.PointB, drawing_info.PointC, drawing_info.PointD)
 				elseif index == "PointB" then
 					line_points.B.From = value
 					line_points.C.To = value
 					construct_tri1(drawing_info.PointA, value, drawing_info.PointC)
-					construct_tri2(value, drawing_info.PointC, drawing_info.PointD)
+					construct_tri2(drawing_info.PointD, drawing_info.PointC, value)
 				elseif index == "PointC" then
 					line_points.C.From = value
 					line_points.D.To = value
 					construct_tri1(drawing_info.PointA, drawing_info.PointB, value)
-					construct_tri2(drawing_info.PointB, value, drawing_info.PointD)
+					construct_tri2(drawing_info.PointD, value, drawing_info.PointB)
 				elseif index == "PointD" then
 					line_points.D.From = value
 					line_points.A.To = value
-					--construct_tri1(drawing_info.PointA, drawing_info.PointB, drawing_info.PointC)
-					construct_tri2(drawing_info.PointB, drawing_info.PointC, value)
-				elseif (index == "Thickness" or index == "Visible" or index == "Color" or index == "ZIndex") then
+					construct_tri2(value, drawing_info.PointC, drawing_info.PointB)
+				elseif (index == "Thickness" or index == "Visible" or index == "Color" or index == "Transparency" or index == "ZIndex") then
 					for _, line_obj in line_points do
 						line_obj[index] = value
 					end
@@ -536,6 +532,11 @@ function drawing_lib.new(drawingType)
 						wedges1.w2.ImageColor3 = value
 						wedges2.w1.ImageColor3 = value
 						wedges2.w2.ImageColor3 = value
+					elseif (index == "Transparency") then
+						wedges1.w1.ImageTransparency = convert_dtransparency(value)
+						wedges1.w2.ImageTransparency = convert_dtransparency(value)
+						wedges2.w1.ImageTransparency = convert_dtransparency(value)
+						wedges2.w2.ImageTransparency = convert_dtransparency(value)
 					end
 				elseif index == "Filled" then
 					wedges1.w1.Visible = value
@@ -551,7 +552,7 @@ function drawing_lib.new(drawingType)
 						for _, linePoint in line_points do
 							linePoint:Remove()
 						end
-						
+
 						remove_tri1();remove_tri2()
 						drawing_info.Remove(self)
 						return drawing_info:Remove()
@@ -560,7 +561,7 @@ function drawing_lib.new(drawingType)
 				return drawing_info[index]
 			end
 		})
-	elseif drawingType == "Triangle" then
+	elseif drawing_type == "Triangle" then
 		local drawing_info = ({
 			PointA = Vector2.zero,
 			PointB = Vector2.zero,
@@ -573,13 +574,13 @@ function drawing_lib.new(drawingType)
 		line_points.A = drawing_lib.new("Line")
 		line_points.B = drawing_lib.new("Line")
 		line_points.C = drawing_lib.new("Line")
-		
+
 		local construct_tri1, remove_tri1, wedges1 = new_2d_triangle(drawing_container)
-		
+
 		construct_tri1(drawing_info.PointA, drawing_info.PointB, drawing_info.PointC)
 		wedges1.w1.Visible = drawing_info.Visible
 		wedges1.w2.Visible = drawing_info.Visible
-		
+
 		return setmetatable(drawing_obj, {
 			__newindex = function(_, index, value)
 				if typeof(drawing_info[index]) == "nil" then return end
@@ -596,17 +597,20 @@ function drawing_lib.new(drawingType)
 					line_points.C.From = value
 					line_points.A.To = value
 					construct_tri1(drawing_info.PointA, drawing_info.PointB, value)
-				elseif (index == "Thickness" or index == "Visible" or index == "Color" or index == "ZIndex") then
+				elseif (index == "Thickness" or index == "Visible" or index == "Color" or index == "Transparency" or index == "ZIndex") then
 					for _, line_obj in line_points do
 						line_obj[index] = value
 					end
-					
+
 					if (index == "Visible" or index == "ZIndex") then
 						wedges1.w1[index] = value
 						wedges1.w2[index] = value
 					elseif (index == "Color") then
 						wedges1.w1.ImageColor3 = value
 						wedges1.w2.ImageColor3 = value
+					elseif (index == "Transparency") then
+						wedges1.w1.ImageTransparency = convert_dtransparency(value)
+						wedges1.w2.ImageTransparency = convert_dtransparency(value)
 					end
 				elseif index == "Filled" then
 					wedges1.w1.Visible = value
@@ -630,6 +634,7 @@ function drawing_lib.new(drawingType)
 			end
 		})
 	end
+	return error(`Drawing object "{drawing_type}" doesn't exist!`, 2)
 end
 
 table.freeze(drawing_lib)
