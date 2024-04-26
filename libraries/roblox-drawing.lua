@@ -123,7 +123,7 @@ local drawing_lib = {}
 drawing_lib.Fonts = {
 	["UI"] = 0,
 	["System"] = 1,
-	["Flex"] = 2,
+	["Plex"] = 2,
 	["Monospace"] = 3
 }
 
@@ -190,7 +190,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						lineFrame:Destroy()
 						drawing_info.Remove(self)
@@ -276,7 +276,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						textLabel:Destroy()
 						drawing_info.Remove(self)
@@ -345,7 +345,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						circleFrame:Destroy()
 						drawing_info.Remove(self)
@@ -407,7 +407,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						squareFrame:Destroy()
 						drawing_info.Remove(self)
@@ -459,7 +459,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						imageFrame:Destroy()
 						drawing_info.Remove(self)
@@ -547,7 +547,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						for _, linePoint in line_points do
 							linePoint:Remove()
@@ -619,7 +619,7 @@ function drawing_lib.new(drawing_type)
 				drawing_info[index] = value
 			end,
 			__index = function(self, index)
-				if index == "Remove" then
+				if (index == "Remove" or index == "Destroy") then
 					return function()
 						for _, line_obj in line_points do
 							line_obj:Remove()
