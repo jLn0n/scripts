@@ -489,7 +489,7 @@ function drawing_lib.new(drawing_type)
 		local construct_tri2, remove_tri2, wedges2 = new_2d_triangle(drawing_container)
 
 		construct_tri1(drawing_info.PointA, drawing_info.PointB, drawing_info.PointC)
-		construct_tri2(drawing_info.PointD, drawing_info.PointC, drawing_info.PointB)
+		construct_tri2(drawing_info.PointA, drawing_info.PointC, drawing_info.PointD)
 		wedges1.w1.Visible = drawing_info.Visible
 		wedges1.w2.Visible = drawing_info.Visible
 		wedges2.w1.Visible = drawing_info.Visible
@@ -503,20 +503,20 @@ function drawing_lib.new(drawing_type)
 					line_points.A.From = value
 					line_points.B.To = value
 					construct_tri1(value, drawing_info.PointB, drawing_info.PointC)
+					construct_tri2(value, drawing_info.PointC, drawing_info.PointD)
 				elseif index == "PointB" then
 					line_points.B.From = value
 					line_points.C.To = value
 					construct_tri1(drawing_info.PointA, value, drawing_info.PointC)
-					construct_tri2(drawing_info.PointD, drawing_info.PointC, value)
 				elseif index == "PointC" then
 					line_points.C.From = value
 					line_points.D.To = value
 					construct_tri1(drawing_info.PointA, drawing_info.PointB, value)
-					construct_tri2(drawing_info.PointD, value, drawing_info.PointB)
+					construct_tri2(drawing_info.PointA, value, drawing_info.PointD)
 				elseif index == "PointD" then
 					line_points.D.From = value
 					line_points.A.To = value
-					construct_tri2(value, drawing_info.PointC, drawing_info.PointB)
+					construct_tri2(drawing_info.PointA, drawing_info.PointC, value)
 				elseif (index == "Thickness" or index == "Visible" or index == "Color" or index == "Transparency" or index == "ZIndex") then
 					for _, line_obj in line_points do
 						line_obj[index] = value
