@@ -522,11 +522,16 @@ function drawing_lib.new(drawing_type)
 						line_obj[index] = value
 					end
 
-					if (index == "Visible" or index == "ZIndex") then
-						wedges1.w1[index] = value
-						wedges1.w2[index] = value
-						wedges2.w1[index] = value
-						wedges2.w2[index] = value
+					if (index == "Visible") then
+						wedges1.w1.Visible = (drawing_info.Filled and value)
+						wedges1.w2.Visible = (drawing_info.Filled and value)
+						wedges2.w1.Visible = (drawing_info.Filled and value)
+						wedges2.w2.Visible = (drawing_info.Filled and value)
+					elseif index == "ZIndex" then
+						wedges1.w1.ZIndex = value
+						wedges1.w2.ZIndex = value
+						wedges2.w1.ZIndex = value
+						wedges2.w2.ZIndex = value
 					elseif (index == "Color") then
 						wedges1.w1.ImageColor3 = value
 						wedges1.w2.ImageColor3 = value
@@ -539,10 +544,10 @@ function drawing_lib.new(drawing_type)
 						wedges2.w2.ImageTransparency = convert_dtransparency(value)
 					end
 				elseif index == "Filled" then
-					wedges1.w1.Visible = value
-					wedges1.w2.Visible = value
-					wedges2.w1.Visible = value
-					wedges2.w2.Visible = value
+					wedges1.w1.Visible = (drawing_info.Visible and value)
+					wedges1.w2.Visible = (drawing_info.Visible and value)
+					wedges2.w1.Visible = (drawing_info.Visible and value)
+					wedges2.w2.Visible = (drawing_info.Visible and value)
 				end
 				drawing_info[index] = value
 			end,
@@ -602,9 +607,12 @@ function drawing_lib.new(drawing_type)
 						line_obj[index] = value
 					end
 
-					if (index == "Visible" or index == "ZIndex") then
-						wedges1.w1[index] = value
-						wedges1.w2[index] = value
+					if (index == "Visible") then
+						wedges1.w1.Visible = (drawing_info.Filled and value)
+						wedges1.w2.Visible = (drawing_info.Filled and value)
+					elseif index == "ZIndex" then
+						wedges1.w1.ZIndex = value
+						wedges1.w2.ZIndex = value
 					elseif (index == "Color") then
 						wedges1.w1.ImageColor3 = value
 						wedges1.w2.ImageColor3 = value
@@ -613,8 +621,8 @@ function drawing_lib.new(drawing_type)
 						wedges1.w2.ImageTransparency = convert_dtransparency(value)
 					end
 				elseif index == "Filled" then
-					wedges1.w1.Visible = value
-					wedges1.w2.Visible = value
+					wedges1.w1.Visible = (drawing_info.Visible and value)
+					wedges1.w2.Visible = (drawing_info.Visible and value)
 				end
 				drawing_info[index] = value
 			end,
