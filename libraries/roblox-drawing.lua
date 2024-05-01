@@ -490,10 +490,10 @@ function drawing_lib.new(drawing_type)
 
 		construct_tri1(drawing_info.PointA, drawing_info.PointB, drawing_info.PointC)
 		construct_tri2(drawing_info.PointA, drawing_info.PointC, drawing_info.PointD)
-		wedges1.w1.Visible = drawing_info.Visible
-		wedges1.w2.Visible = drawing_info.Visible
-		wedges2.w1.Visible = drawing_info.Visible
-		wedges2.w2.Visible = drawing_info.Visible
+		wedges1.w1.Visible = drawing_info.Filled
+		wedges1.w2.Visible = drawing_info.Filled
+		wedges2.w1.Visible = drawing_info.Filled
+		wedges2.w2.Visible = drawing_info.Filled
 
 		return setmetatable(drawing_obj, {
 			__newindex = function(_, index, value)
@@ -578,8 +578,8 @@ function drawing_lib.new(drawing_type)
 		local construct_tri1, remove_tri1, wedges1 = new_2d_triangle(drawing_container)
 
 		construct_tri1(drawing_info.PointA, drawing_info.PointB, drawing_info.PointC)
-		wedges1.w1.Visible = drawing_info.Visible
-		wedges1.w2.Visible = drawing_info.Visible
+		wedges1.w1.Visible = drawing_info.Filled
+		wedges1.w2.Visible = drawing_info.Filled
 
 		return setmetatable(drawing_obj, {
 			__newindex = function(_, index, value)
